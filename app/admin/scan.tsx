@@ -7,6 +7,7 @@ import * as Haptics from "expo-haptics";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+    ActivityIndicator,
     Animated,
     Dimensions,
     FlatList,
@@ -20,6 +21,7 @@ import {
 import Toast from "react-native-toast-message";
 import AdminSecurityPINWarning from "../../components/AdminSecurityPINWarning";
 import { BarcodeScanner } from "../../components/BarcodeScanner";
+import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { HelpTooltip } from "../../components/HelpTooltip";
 import { useTheme } from "../../context/ThemeContext";
 import { hasSecurityPIN } from "../../utils/securityPINCheck";
@@ -36,10 +38,12 @@ interface CartItem {
 }
 
 export default function AdminScanScreen() {
+  console.log('🎬 [ADMIN-SCAN] Component mounting...');
   const router = useRouter();
   const { theme } = useTheme();
   const params = useLocalSearchParams();
   const [permission, requestPermission] = useCameraPermissions();
+  console.log('📷 [ADMIN-SCAN] Camera permission state:', permission?.granted);
 
   // Scanner Mode: "lookup", "sales", or "register"
   const [mode, setMode] = useState<"lookup" | "sales" | "register">("sales");
@@ -53,6 +57,8 @@ export default function AdminScanScreen() {
   // Cart State (for sales mode)
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCartModal, setShowCartModal] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [cameraError, setCameraError] = useState(false);
 
   // Security PIN Warning State
   const [securityPINWarningVisible, setSecurityPINWarningVisible] = useState(false);
@@ -66,21 +72,34 @@ export default function AdminScanScreen() {
 
   // Check security PIN on mount
   useEffect(() => {
-    checkSecurityPIN();
+    console.log('🔐 [ADMIN-SCAN] Checking security PIN on mount...');
+    checkSecurityPIN().catch(err => {
+      console.error('❌ [ADMIN-SCAN] Failed to check security PIN:', err);
+    });
   }, []);
 
   const checkSecurityPIN = async () => {
-    // Check if user is authenticated as admin
-    const userRole = await AsyncStorage.getItem('auth_user_role');
-    
-    // Only check Security PIN for staff users
-    if (userRole === 'staff') {
-      const pinSet = await hasSecurityPIN();
-      if (!pinSet) {
-        setSecurityPINWarningVisible(true);
+    try {
+      console.log('🔐 [ADMIN-SCAN] Starting security PIN check...');
+      // Check if user is authenticated as admin
+      const userRole = await AsyncStorage.getItem('auth_user_role');
+      console.log('👤 [ADMIN-SCAN] User role:', userRole);
+      
+      // Only check Security PIN for staff users
+      if (userRole === 'staff') {
+        const pinSet = await hasSecurityPIN();
+        console.log('🔐 [ADMIN-SCAN] PIN check result for staff:', pinSet);
+        if (!pinSet) {
+          console.log('⚠️ [ADMIN-SCAN] No PIN found, showing warning');
+          setSecurityPINWarningVisible(true);
+        }
+      } else {
+        console.log('✅ [ADMIN-SCAN] Admin user - no PIN warning needed');
       }
+      // Admin users don't need Security PIN prompt when already authenticated
+    } catch (err) {
+      console.error('❌ [ADMIN-SCAN] Error checking security PIN:', err);
     }
-    // Admin users don't need Security PIN prompt when already authenticated
   };
 
   const handleNavigateToSettings = () => {
@@ -91,17 +110,31 @@ export default function AdminScanScreen() {
   // Reset on focus and clear cart if returning from completed sale
   useFocusEffect(
     React.useCallback(() => {
-      setScanned(false);
-      setLoading(false);
-      setTorch(false);
-      setCameraKey((prev) => prev + 1);
-      
-      // Clear cart if clearCart param is set
-      if (params.clearCart === 'true') {
-        setCart([]);
+      console.log('👁️ [ADMIN-SCAN] Screen focused - resetting state...');
+      try {
+        setIsMounted(true);
+        setCameraError(false);
+        setScanned(false);
+        setLoading(false);
+        setTorch(false);
+        setCameraKey((prev) => {
+          const newKey = prev + 1;
+          console.log('🔑 [ADMIN-SCAN] Camera key updated:', prev, '->', newKey);
+          return newKey;
+        });
+        
+        // Clear cart if clearCart param is set
+        if (params.clearCart === 'true') {
+          console.log('🛒 [ADMIN-SCAN] Clearing cart...');
+          setCart([]);
+        }
+      } catch (err) {
+        console.error('❌ [ADMIN-SCAN] Error during focus effect:', err);
       }
 
       return () => {
+        console.log('🧹 [ADMIN-SCAN] Screen unfocused - cleanup...');
+        setIsMounted(false);
         setTorch(false);
       };
     }, [params.clearCart])
@@ -109,6 +142,7 @@ export default function AdminScanScreen() {
 
   // Reset when mode changes
   useEffect(() => {
+    console.log('🔄 [ADMIN-SCAN] Mode changed to:', mode);
     setScanned(false);
     setLoading(false);
   }, [mode]);
@@ -155,23 +189,30 @@ export default function AdminScanScreen() {
   };
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    if (scanned || loading) return;
+    console.log('📸 [ADMIN-SCAN] Barcode scanned:', data, 'Mode:', mode);
+    if (scanned || loading) {
+      console.log('⏭️ [ADMIN-SCAN] Scan ignored - already processing');
+      return;
+    }
     setScanned(true);
     setLoading(true);
 
     // Add delay to allow camera to focus properly
-      await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+    await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
 
     try {
       let response;
       try {
+        console.log('🌐 [ADMIN-SCAN] Fetching registry data...');
         response = await axios.get(
           `${process.env.EXPO_PUBLIC_API_URL}/products/registry/lookup/${data}`,
           { timeout: 3000 }
         );
+        console.log('✅ [ADMIN-SCAN] Registry response:', response.data.found ? 'FOUND' : 'NOT FOUND');
       } catch (apiError: any) {
         // Network error - show offline message
-        console.log('Registry lookup failed, app is offline');
+        console.error('❌ [ADMIN-SCAN] Registry lookup failed:', apiError.message);
+        console.log('📡 [ADMIN-SCAN] App is offline');
         Toast.show({
           type: 'error',
           text1: 'Offline Mode',
@@ -184,6 +225,7 @@ export default function AdminScanScreen() {
       }
 
       if (mode === "lookup") {
+        console.log('🔍 [ADMIN-SCAN] LOOKUP mode processing...');
         // LOOKUP MODE: Navigate to product detail
         if (response.data.found) {
           // Product exists in registry - now find it in local inventory
@@ -435,6 +477,7 @@ export default function AdminScanScreen() {
 
   // Handle camera permissions
   if (!permission) {
+    console.log('⏳ [ADMIN-SCAN] Permission object is null/undefined - waiting...');
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Text style={[styles.permissionText, { color: theme.text }]}>
@@ -445,6 +488,8 @@ export default function AdminScanScreen() {
   }
 
   if (!permission.granted) {
+    console.log('🚫 [ADMIN-SCAN] Camera permission not granted');
+
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <View style={styles.permissionContainer}>
@@ -465,8 +510,57 @@ export default function AdminScanScreen() {
 
   const modeColor = mode === "sales" ? "#00D1FF" : mode === "lookup" ? theme.primary : "#00FF00";
 
+  console.log('🎨 [ADMIN-SCAN] Rendering scanner - cameraKey:', cameraKey, 'mode:', mode, 'cart items:', cart.length, 'isMounted:', isMounted);
+
+  // CRITICAL: Don't render camera until component is fully mounted and permission is granted
+  if (!isMounted || !permission?.granted) {
+    console.log('⏸️ [ADMIN-SCAN] Waiting for mount/permission - isMounted:', isMounted, 'granted:', permission?.granted);
+    return (
+      <ErrorBoundary>
+        <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.permissionText, { color: theme.text, marginTop: 20 }]}>
+            Initializing camera...
+          </Text>
+        </View>
+      </ErrorBoundary>
+    );
+  }
+
+  // Show error state if camera failed to mount
+  if (cameraError) {
+    console.log('💥 [ADMIN-SCAN] Camera error state - showing recovery UI');
+    return (
+      <ErrorBoundary>
+        <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center', padding: 20 }]}>
+          <Ionicons name="camera-off" size={64} color={theme.subtext} />
+          <Text style={[styles.permissionText, { color: theme.text, marginTop: 20, textAlign: 'center' }]}>
+            Camera failed to initialize
+          </Text>
+          <Pressable
+            style={[styles.permissionBtn, { backgroundColor: theme.primary, marginTop: 20 }]}
+            onPress={() => {
+              console.log('🔄 [ADMIN-SCAN] Retrying camera initialization...');
+              setCameraError(false);
+              setCameraKey(prev => prev + 1);
+            }}
+          >
+            <Text style={styles.permissionBtnText}>Retry</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.permissionBtn, { backgroundColor: '#444', marginTop: 10 }]}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.permissionBtnText}>Go Back</Text>
+          </Pressable>
+        </View>
+      </ErrorBoundary>
+    );
+  }
+
   return (
-    <View style={styles.container}>
+    <ErrorBoundary>
+      <View style={styles.container}>
       <BarcodeScanner
         cameraKey={cameraKey}
         onScan={handleBarCodeScanned}
@@ -475,6 +569,16 @@ export default function AdminScanScreen() {
         torch={torch}
         setTorch={setTorch}
         tabColor={modeColor}
+        onCameraError={() => {
+          console.error('❌ [ADMIN-SCAN] Camera error callback triggered');
+          setCameraError(true);
+          Toast.show({
+            type: 'error',
+            text1: 'Camera Error',
+            text2: 'Failed to initialize camera. Please try again.',
+            visibilityTime: 5000,
+          });
+        }}
       >
         {/* TOP BAR - Tabs and Close */}
         <View style={styles.topBar}>
@@ -748,6 +852,7 @@ export default function AdminScanScreen() {
         onNavigateToSettings={handleNavigateToSettings}
       />
     </View>
+    </ErrorBoundary>
   );
 }
 

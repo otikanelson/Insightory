@@ -5,23 +5,24 @@ import { useAudioPlayer } from "expo-audio";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Dimensions,
-  FlatList,
-  ImageBackground,
-  Modal,
-  Platform,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
+    ActivityIndicator,
+    Dimensions,
+    FlatList,
+    Modal,
+    Platform,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { AddProductModal } from "../../components/AddProductModal";
+import { DisabledFeatureOverlay } from "../../components/DisabledFeatureOverlay";
 import { HelpTooltip } from "../../components/HelpTooltip";
 import { useTheme } from "../../context/ThemeContext";
+import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 import { useProducts } from "../../hooks/useProducts";
 
 const { width } = Dimensions.get("window");
@@ -47,13 +48,24 @@ interface RevenueStats {
 
 export default function AdminSales() {
   const { theme, isDark } = useTheme();
-
-  const backgroundImage = isDark
-    ? require("../../assets/images/Background7.png")
-    : require("../../assets/images/Background9.png");
   const router = useRouter();
   const { products, refresh } = useProducts();
   const { cartData } = useLocalSearchParams();
+  
+  // Check feature access for processing sales
+  const salesAccess = useFeatureAccess('processSales');
+  
+  // Show overlay if access is denied
+  if (!salesAccess.isAllowed) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <DisabledFeatureOverlay 
+          reason={salesAccess.reason || 'Access denied'} 
+          isViewOnly={salesAccess.isViewOnly}
+        />
+      </View>
+    );
+  }
 
   // State
   const [cart, setCart] = useState<any[]>([]);
@@ -321,8 +333,8 @@ export default function AdminSales() {
   );
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={{ flex: 1, backgroundColor: "transparent" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
       
 
       {/* Technical Header */}
@@ -944,7 +956,7 @@ export default function AdminSales() {
         </View>
       </Modal>
     </View>
-    </ImageBackground>
+    </View>
   );
 }
 

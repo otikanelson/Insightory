@@ -2,14 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Image,
-  ImageBackground,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
+    ActivityIndicator,
+    Image,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View
 } from "react-native";
 import { PredictionCard } from "../../components/PredictionCard";
 import { useTheme } from "../../context/ThemeContext";
@@ -29,9 +28,6 @@ export default function ProductDetails() {
   const router = useRouter();
   const { theme, isDark } = useTheme();
 
-  const backgroundImage = isDark
-    ? require("../../assets/images/Background7.png")
-    : require("../../assets/images/Background9.png");
   const { getProductById } = useProducts();
   const { prediction, loading: predictionLoading } = useAIPredictions({ 
     productId: id as string,
@@ -116,31 +112,23 @@ export default function ProductDetails() {
 
   if (loading) {
     return (
-      <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-        <View style={[styles.container, { backgroundColor: "transparent" }]}>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={theme.primary} />
-            <Text style={[styles.loadingText, { color: theme.text }]}>
-              Loading product...
-            </Text>
-          </View>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.loadingText, { color: theme.text }]}>Loading product...</Text>
         </View>
-      </ImageBackground>
+      </View>
     );
   }
 
   if (!product) {
     return (
-      <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-        <View style={[styles.container, { backgroundColor: "transparent" }]}>
-          <View style={styles.loadingContainer}>
-            <Ionicons name="alert-circle-outline" size={64} color={theme.subtext} />
-            <Text style={[styles.errorText, { color: theme.text }]}>
-              Product not found
-            </Text>
-          </View>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.loadingContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color={theme.subtext} />
+          <Text style={[styles.errorText, { color: theme.text }]}>Product not found</Text>
         </View>
-      </ImageBackground>
+      </View>
     );
   }
 
@@ -159,9 +147,8 @@ export default function ProductDetails() {
         : "#10B981";
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={[styles.container, { backgroundColor: "transparent" }]}>
-        <ScrollView
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -177,7 +164,7 @@ export default function ProductDetails() {
           
           <View style={styles.headerInfo}>
             <Text style={[styles.headerLabel, { color: theme.primary }]}>
-              PRODUCT_DETAILS
+              PRODUCT DETAILS
             </Text>
             <Text style={[styles.headerTitle, { color: theme.text }]} numberOfLines={1}>
               {product.name}
@@ -438,7 +425,6 @@ export default function ProductDetails() {
         )}
       </ScrollView>
     </View>
-    </ImageBackground>
   );
 }
 

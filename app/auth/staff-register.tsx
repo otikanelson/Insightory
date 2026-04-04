@@ -4,12 +4,12 @@ import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View
@@ -18,70 +18,74 @@ import Toast from 'react-native-toast-message';
 import { PinInput } from '../../components/PinInput';
 import { useTheme } from '../../context/ThemeContext';
 
-type RegistrationStep = 'name' | 'pin' | 'complete';
+type RegistrationStep = 'name' | 'permissions' | 'pin' | 'complete';
+
+interface Permissions {
+  viewInventory: boolean;
+  addProducts: boolean;
+  editProducts: boolean;
+  deleteProducts: boolean;
+  processSales: boolean;
+  scanBarcodes: boolean;
+  viewAnalytics: boolean;
+  exportData: boolean;
+  manageCategories: boolean;
+}
 
 export default function StaffRegisterScreen() {
-  const { theme, isDark } = useTheme();
-
-  const backgroundImage = isDark
-    ? require("../../assets/images/Background7.png")
-    : require("../../assets/images/Background9.png");
+  const { theme } = useTheme();
   const router = useRouter();
+  
   const [step, setStep] = useState<RegistrationStep>('name');
   const [staffName, setStaffName] = useState('');
   const [staffPin, setStaffPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [pinError, setPinError] = useState(false);
   const [isFirstPin, setIsFirstPin] = useState(true);
-  const [pinKey, setPinKey] = useState(0); // Key to force PinInput reset
+  const [pinKey, setPinKey] = useState(0);
+  
+  // Permissions state
+  const [permissions, setPermissions] = useState<Permissions>({
+    viewInventory: true,
+    addProducts: true,
+    editProducts: true,
+    deleteProducts: false,
+    processSales: true,
+    scanBarcodes: true,
+    viewAnalytics: false,
+    exportData: false,
+    manageCategories: false,
+  });
 
   const handlePinComplete = async (pin: string) => {
     if (isFirstPin) {
       setStaffPin(pin);
       setIsFirstPin(false);
       setPinError(false);
-      setPinKey(prev => prev + 1); // Force PinInput to reset
+      setPinKey(prev => prev + 1);
     } else {
-      setConfirmPin(pin);
-      
       if (pin === staffPin) {
-        // Save staff credentials to backend and local storage
         try {
           const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api';
-          
-          console.log('=== STAFF REGISTRATION DEBUG ===');
-          console.log('1. API_URL:', API_URL);
-          console.log('2. Staff Name:', staffName);
-          console.log('3. PIN:', '****');
-          
-          // Get admin ID for createdBy field
           const adminId = await AsyncStorage.getItem('auth_user_id');
-          console.log('4. Admin ID:', adminId);
           
           const requestData = {
             name: staffName,
             pin: pin,
-            createdBy: adminId
+            createdBy: adminId,
+            permissions: permissions
           };
-          console.log('5. Request Data:', { ...requestData, pin: '****' });
           
-          // Create staff user in backend
-          console.log('6. Sending POST request to:', `${API_URL}/auth/staff`);
           const response = await axios.post(`${API_URL}/auth/staff`, requestData);
-          console.log('7. Response Status:', response.status);
-          console.log('8. Response Data:', response.data);
 
           if (response.data.success) {
             const staffId = response.data.data.user.id;
-            console.log('9. Staff ID from response:', staffId);
             
-            // Also save to local storage as fallback
             await AsyncStorage.multiSet([
               ['auth_staff_pin', pin],
               ['auth_staff_id', staffId],
               ['auth_staff_name', staffName],
             ]);
-            console.log('10. Saved to AsyncStorage');
 
             Toast.show({
               type: 'success',
@@ -90,42 +94,27 @@ export default function StaffRegisterScreen() {
             });
 
             setStep('complete');
-            console.log('11. Registration complete!');
           } else {
-            console.error('12. Backend returned unsuccessful response:', response.data);
             throw new Error('Backend returned unsuccessful response');
           }
         } catch (error: any) {
           let errorMessage = 'Could not create staff account';
           
-          try {
-            if (error.response) {
-              // Server responded with error
-              const status = error.response.status;
-              const serverError = error.response.data?.error;
-              
-              if (status === 401) {
-                errorMessage = 'Authentication failed - please log in again';
-              } else if (status === 403) {
-                errorMessage = 'You do not have permission to add staff';
-              } else if (status === 400) {
-                // Validation errors like duplicate PIN - don't log, just show message
-                errorMessage = serverError || 'Invalid staff information';
-              } else if (status >= 500) {
-                errorMessage = 'Server error - please try again later';
-                console.error('Staff registration server error:', status);
-              } else {
-                errorMessage = serverError || errorMessage;
-              }
-            } else if (error.code === 'ECONNABORTED') {
-              errorMessage = 'Connection timeout - please check your internet';
-            } else if (error.code === 'ERR_NETWORK' || !error.response) {
-              errorMessage = 'Network error - please check your connection';
-            } else if (error.message) {
-              errorMessage = error.message;
+          if (error.response) {
+            const status = error.response.status;
+            const serverError = error.response.data?.error;
+            
+            if (status === 401) {
+              errorMessage = 'Authentication failed - please log in again';
+            } else if (status === 403) {
+              errorMessage = 'You do not have permission to add staff';
+            } else if (status === 400) {
+              errorMessage = serverError || 'Invalid staff information';
+            } else if (status >= 500) {
+              errorMessage = 'Server error - please try again later';
+            } else {
+              errorMessage = serverError || errorMessage;
             }
-          } catch (parseError) {
-            // Silently handle parsing errors
           }
           
           Toast.show({
@@ -135,7 +124,6 @@ export default function StaffRegisterScreen() {
             visibilityTime: 4000,
           });
           
-          // Reset on error
           setPinError(true);
           setIsFirstPin(true);
           setStaffPin('');
@@ -147,7 +135,7 @@ export default function StaffRegisterScreen() {
         setIsFirstPin(true);
         setStaffPin('');
         setConfirmPin('');
-        setPinKey(prev => prev + 1); // Force PinInput to reset
+        setPinKey(prev => prev + 1);
       }
     }
   };
@@ -162,6 +150,8 @@ export default function StaffRegisterScreen() {
         });
         return;
       }
+      setStep('permissions');
+    } else if (step === 'permissions') {
       setStep('pin');
     } else if (step === 'complete') {
       router.replace('/admin/settings' as any);
@@ -169,8 +159,10 @@ export default function StaffRegisterScreen() {
   };
 
   const handleBack = () => {
-    if (step === 'pin') {
+    if (step === 'permissions') {
       setStep('name');
+    } else if (step === 'pin') {
+      setStep('permissions');
       setIsFirstPin(true);
       setStaffPin('');
       setConfirmPin('');
@@ -181,202 +173,242 @@ export default function StaffRegisterScreen() {
     }
   };
 
+  const togglePermission = (key: keyof Permissions) => {
+    setPermissions(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const permissionsList = [
+    { key: 'viewInventory' as keyof Permissions, label: 'View Inventory', icon: 'eye-outline', description: 'View all products and stock levels' },
+    { key: 'addProducts' as keyof Permissions, label: 'Add Products', icon: 'add-circle-outline', description: 'Add new products and batches' },
+    { key: 'editProducts' as keyof Permissions, label: 'Edit Products', icon: 'create-outline', description: 'Modify product details and prices' },
+    { key: 'deleteProducts' as keyof Permissions, label: 'Delete Products', icon: 'trash-outline', description: 'Remove products from inventory' },
+    { key: 'processSales' as keyof Permissions, label: 'Process Sales', icon: 'cart-outline', description: 'Complete sales transactions' },
+    { key: 'scanBarcodes' as keyof Permissions, label: 'Scan Barcodes', icon: 'scan-outline', description: 'Use barcode scanner' },
+    { key: 'viewAnalytics' as keyof Permissions, label: 'View Analytics', icon: 'analytics-outline', description: 'Access sales reports and insights' },
+    { key: 'exportData' as keyof Permissions, label: 'Export Data', icon: 'download-outline', description: 'Export inventory and sales data' },
+    { key: 'manageCategories' as keyof Permissions, label: 'Manage Categories', icon: 'folder-outline', description: 'Add and edit product categories' },
+  ];
+
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
       <KeyboardAvoidingView 
-        style={[styles.container, { backgroundColor: "transparent" }]}
+        style={[styles.container, { backgroundColor: theme.background }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
         <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Pressable style={styles.backButton} onPress={handleBack}>
-            <Ionicons name="arrow-back" size={24} color={theme.primary} />
-          </Pressable>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>
-            Add Staff Member
-          </Text>
-        </View>
-
-        {/* Content */}
-        <View style={styles.content}>
-          {step === 'name' && (
-            <>
-              <View style={[styles.iconCircle, { backgroundColor: theme.primary + '15' }]}>
-                <Ionicons name="person-add" size={48} color={theme.primary} />
-              </View>
-              <Text style={[styles.title, { color: theme.text }]}>
-                Staff Information
-              </Text>
-              <Text style={[styles.subtitle, { color: theme.subtext }]}>
-                Enter the name of the staff member
-              </Text>
-
-              <TextInput
-                style={[
-                  styles.nameInput,
-                  { color: theme.text, borderColor: theme.border, backgroundColor: theme.surface },
-                ]}
-                placeholder="Staff member name"
-                placeholderTextColor={theme.subtext}
-                value={staffName}
-                onChangeText={setStaffName}
-                autoFocus
-              />
-
-              <View style={[styles.infoCard, { backgroundColor: theme.primary + '10', borderColor: theme.primary }]}>
-                <Ionicons name="information-circle" size={20} color={theme.primary} />
-                <Text style={[styles.infoText, { color: theme.text }]}>
-                  Staff members can manage inventory, add products, and process sales but cannot access admin settings.
-                </Text>
-              </View>
-            </>
-          )}
-
-          {step === 'pin' && (
-            <>
-              <View style={[styles.iconCircle, { backgroundColor: theme.primary + '15' }]}>
-                <Ionicons name="key" size={48} color={theme.primary} />
-              </View>
-              <Text style={[styles.title, { color: theme.text }]}>
-                {isFirstPin ? 'Create Staff PIN' : 'Confirm PIN'}
-              </Text>
-              <Text style={[styles.subtitle, { color: theme.subtext }]}>
-                {isFirstPin
-                  ? 'Choose a 4-digit PIN for this staff member'
-                  : 'Enter the PIN again to confirm'}
-              </Text>
-
-              <View style={styles.pinContainer}>
-                <PinInput
-                  key={pinKey}
-                  onComplete={handlePinComplete}
-                  error={pinError}
-                  onClear={() => {
-                    setPinError(false);
-                    if (!isFirstPin) {
-                      setIsFirstPin(true);
-                      setStaffPin('');
-                      setConfirmPin('');
-                      setPinKey(prev => prev + 1);
-                    }
-                  }}
-                />
-                {pinError && (
-                  <Text style={[styles.errorText, { color: theme.notification }]}>
-                    PINs don't match. Please try again.
-                  </Text>
-                )}
-              </View>
-
-              <View style={[styles.warningCard, { backgroundColor: '#FF9500' + '10', borderColor: '#FF9500' }]}>
-                <Ionicons name="warning" size={20} color="#FF9500" />
-                <Text style={[styles.warningText, { color: theme.text }]}>
-                  Make sure to share this PIN securely with the staff member. It cannot be recovered if lost.
-                </Text>
-              </View>
-            </>
-          )}
-
-          {step === 'complete' && (
-            <>
-              <View style={[styles.iconCircle, { backgroundColor: '#34C759' + '15' }]}>
-                <Ionicons name="checkmark-circle" size={64} color="#34C759" />
-              </View>
-              <Text style={[styles.title, { color: theme.text }]}>
-                Staff Added!
-              </Text>
-              <Text style={[styles.subtitle, { color: theme.subtext }]}>
-                {staffName} can now log in with their PIN
-              </Text>
-
-              <View style={[styles.summaryCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryLabel, { color: theme.subtext }]}>Name:</Text>
-                  <Text style={[styles.summaryValue, { color: theme.text }]}>{staffName}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryLabel, { color: theme.subtext }]}>Role:</Text>
-                  <Text style={[styles.summaryValue, { color: theme.text }]}>Staff</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryLabel, { color: theme.subtext }]}>PIN:</Text>
-                  <Text style={[styles.summaryValue, { color: theme.text }]}>••••</Text>
-                </View>
-              </View>
-
-              <View style={[styles.permissionsCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-                <Text style={[styles.permissionsTitle, { color: theme.text }]}>
-                  Staff Permissions
-                </Text>
-                <View style={styles.permissionsList}>
-                  <View style={styles.permissionItem}>
-                    <Ionicons name="checkmark-circle" size={20} color="#34C759" />
-                    <Text style={[styles.permissionText, { color: theme.text }]}>
-                      View inventory
-                    </Text>
-                  </View>
-                  <View style={styles.permissionItem}>
-                    <Ionicons name="checkmark-circle" size={20} color="#34C759" />
-                    <Text style={[styles.permissionText, { color: theme.text }]}>
-                      Add products
-                    </Text>
-                  </View>
-                  <View style={styles.permissionItem}>
-                    <Ionicons name="checkmark-circle" size={20} color="#34C759" />
-                    <Text style={[styles.permissionText, { color: theme.text }]}>
-                      Process sales
-                    </Text>
-                  </View>
-                  <View style={styles.permissionItem}>
-                    <Ionicons name="checkmark-circle" size={20} color="#34C759" />
-                    <Text style={[styles.permissionText, { color: theme.text }]}>
-                      Scan barcodes
-                    </Text>
-                  </View>
-                  <View style={styles.permissionItem}>
-                    <Ionicons name="close-circle" size={20} color="#FF3B30" />
-                    <Text style={[styles.permissionText, { color: theme.subtext }]}>
-                      Access admin settings
-                    </Text>
-                  </View>
-                  <View style={styles.permissionItem}>
-                    <Ionicons name="close-circle" size={20} color="#FF3B30" />
-                    <Text style={[styles.permissionText, { color: theme.subtext }]}>
-                      Delete products
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </>
-          )}
-        </View>
-
-        {/* Footer Button */}
-        {(step === 'name' || step === 'complete') && (
-          <View style={styles.footer}>
-            <Pressable
-              style={[styles.continueButton, { backgroundColor: theme.primary }]}
-              onPress={handleContinue}
-            >
-              <Text style={styles.continueText}>
-                {step === 'complete' ? 'Done' : 'Continue'}
-              </Text>
-              <Ionicons
-                name={step === 'complete' ? 'checkmark' : 'arrow-forward'}
-                size={20}
-                color="#FFF"
-              />
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <Pressable style={styles.backButton} onPress={handleBack}>
+              <Ionicons name="arrow-back" size={24} color={theme.primary} />
             </Pressable>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>
+              Add Staff Member
+            </Text>
           </View>
-        )}
-      </ScrollView>
-    </KeyboardAvoidingView>
-    </ImageBackground>
+
+          {/* Content */}
+          <View style={styles.content}>
+            {step === 'name' && (
+              <>
+                <View style={[styles.iconCircle, { backgroundColor: theme.primary + '15' }]}>
+                  <Ionicons name="person-add" size={48} color={theme.primary} />
+                </View>
+                <Text style={[styles.title, { color: theme.text }]}>
+                  Staff Information
+                </Text>
+                <Text style={[styles.subtitle, { color: theme.subtext }]}>
+                  Enter the name of the staff member
+                </Text>
+
+                <TextInput
+                  style={[
+                    styles.nameInput,
+                    { color: theme.text, borderColor: theme.border, backgroundColor: theme.surface },
+                  ]}
+                  placeholder="Staff member name"
+                  placeholderTextColor={theme.subtext}
+                  value={staffName}
+                  onChangeText={setStaffName}
+                  autoFocus
+                />
+
+                <View style={[styles.infoCard, { backgroundColor: theme.primary + '10', borderColor: theme.primary }]}>
+                  <Ionicons name="information-circle" size={20} color={theme.primary} />
+                  <Text style={[styles.infoText, { color: theme.text }]}>
+                    You'll set specific permissions for this staff member in the next step.
+                  </Text>
+                </View>
+              </>
+            )}
+
+            {step === 'permissions' && (
+              <>
+                <View style={[styles.iconCircle, { backgroundColor: theme.primary + '15' }]}>
+                  <Ionicons name="shield-checkmark" size={48} color={theme.primary} />
+                </View>
+                <Text style={[styles.title, { color: theme.text }]}>
+                  Set Permissions
+                </Text>
+                <Text style={[styles.subtitle, { color: theme.subtext }]}>
+                  Choose what {staffName} can do
+                </Text>
+
+                <View style={styles.permissionsContainer}>
+                  {permissionsList.map((perm) => (
+                    <View
+                      key={perm.key}
+                      style={[
+                        styles.permissionRow,
+                        { backgroundColor: theme.surface, borderColor: theme.border }
+                      ]}
+                    >
+                      <View style={[styles.permIconBox, { backgroundColor: theme.primary + '15' }]}>
+                        <Ionicons name={perm.icon as any} size={20} color={theme.primary} />
+                      </View>
+                      <View style={styles.permTextBox}>
+                        <Text style={[styles.permLabel, { color: theme.text }]}>
+                          {perm.label}
+                        </Text>
+                        <Text style={[styles.permDesc, { color: theme.subtext }]}>
+                          {perm.description}
+                        </Text>
+                      </View>
+                      <Switch
+                        value={permissions[perm.key]}
+                        onValueChange={() => togglePermission(perm.key)}
+                        trackColor={{ true: theme.primary, false: theme.border }}
+                      />
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+
+            {step === 'pin' && (
+              <>
+                <View style={[styles.iconCircle, { backgroundColor: theme.primary + '15' }]}>
+                  <Ionicons name="key" size={48} color={theme.primary} />
+                </View>
+                <Text style={[styles.title, { color: theme.text }]}>
+                  {isFirstPin ? 'Create Staff PIN' : 'Confirm PIN'}
+                </Text>
+                <Text style={[styles.subtitle, { color: theme.subtext }]}>
+                  {isFirstPin
+                    ? 'Choose a 4-digit PIN for this staff member'
+                    : 'Enter the PIN again to confirm'}
+                </Text>
+
+                <View style={styles.pinContainer}>
+                  <PinInput
+                    key={pinKey}
+                    onComplete={handlePinComplete}
+                    error={pinError}
+                    onClear={() => {
+                      setPinError(false);
+                      if (!isFirstPin) {
+                        setIsFirstPin(true);
+                        setStaffPin('');
+                        setConfirmPin('');
+                        setPinKey(prev => prev + 1);
+                      }
+                    }}
+                  />
+                  {pinError && (
+                    <Text style={[styles.errorText, { color: theme.notification }]}>
+                      PINs don't match. Please try again.
+                    </Text>
+                  )}
+                </View>
+
+                <View style={[styles.warningCard, { backgroundColor: '#FF9500' + '10', borderColor: '#FF9500' }]}>
+                  <Ionicons name="warning" size={20} color="#FF9500" />
+                  <Text style={[styles.warningText, { color: theme.text }]}>
+                    Make sure to share this PIN securely with the staff member. It cannot be recovered if lost.
+                  </Text>
+                </View>
+              </>
+            )}
+
+            {step === 'complete' && (
+              <>
+                <View style={[styles.iconCircle, { backgroundColor: '#34C759' + '15' }]}>
+                  <Ionicons name="checkmark-circle" size={64} color="#34C759" />
+                </View>
+                <Text style={[styles.title, { color: theme.text }]}>
+                  Staff Added!
+                </Text>
+                <Text style={[styles.subtitle, { color: theme.subtext }]}>
+                  {staffName} can now log in with their PIN
+                </Text>
+
+                <View style={[styles.summaryCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                  <View style={styles.summaryRow}>
+                    <Text style={[styles.summaryLabel, { color: theme.subtext }]}>Name:</Text>
+                    <Text style={[styles.summaryValue, { color: theme.text }]}>{staffName}</Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={[styles.summaryLabel, { color: theme.subtext }]}>Role:</Text>
+                    <Text style={[styles.summaryValue, { color: theme.text }]}>Staff</Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={[styles.summaryLabel, { color: theme.subtext }]}>PIN:</Text>
+                    <Text style={[styles.summaryValue, { color: theme.text }]}>••••</Text>
+                  </View>
+                </View>
+
+                <View style={[styles.permissionsCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                  <Text style={[styles.permissionsTitle, { color: theme.text }]}>
+                    Assigned Permissions
+                  </Text>
+                  <View style={styles.permissionsList}>
+                    {permissionsList.map((perm) => (
+                      <View key={perm.key} style={styles.permissionItem}>
+                        <Ionicons
+                          name={permissions[perm.key] ? 'checkmark-circle' : 'close-circle'}
+                          size={20}
+                          color={permissions[perm.key] ? '#34C759' : '#FF3B30'}
+                        />
+                        <Text
+                          style={[
+                            styles.permissionText,
+                            { color: permissions[perm.key] ? theme.text : theme.subtext }
+                          ]}
+                        >
+                          {perm.label}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </>
+            )}
+          </View>
+
+          {/* Footer Button */}
+          {(step === 'name' || step === 'permissions' || step === 'complete') && (
+            <View style={styles.footer}>
+              <Pressable
+                style={[styles.continueButton, { backgroundColor: theme.primary }]}
+                onPress={handleContinue}
+              >
+                <Text style={styles.continueText}>
+                  {step === 'complete' ? 'Done' : 'Continue'}
+                </Text>
+                <Ionicons
+                  name={step === 'complete' ? 'checkmark' : 'arrow-forward'}
+                  size={20}
+                  color="#FFF"
+                />
+              </Pressable>
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -451,6 +483,37 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     lineHeight: 18,
+  },
+  permissionsContainer: {
+    width: '100%',
+    gap: 12,
+  },
+  permissionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 12,
+  },
+  permIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  permTextBox: {
+    flex: 1,
+  },
+  permLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  permDesc: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   pinContainer: {
     alignItems: 'center',

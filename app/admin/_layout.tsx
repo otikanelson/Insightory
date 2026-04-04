@@ -4,7 +4,6 @@ import { Tabs, useFocusEffect, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
     ActivityIndicator,
-    Dimensions,
     Modal,
     Pressable,
     StyleSheet,
@@ -12,36 +11,10 @@ import {
     TextInput,
     View
 } from "react-native";
-import { Path, Svg } from "react-native-svg";
 import Toast from "react-native-toast-message";
 import { AdminTourOverlay } from "../../components/AdminTourOverlay";
 import { AdminTourProvider } from "../../context/AdminTourContext";
 import { useTheme } from "../../context/ThemeContext";
-
-const { width } = Dimensions.get("window");
-
-/**
- * Custom SVG Background for the Tab Bar with a center dip
- */
-const AdminTabBg = ({ color }: { color: string }) => {
-  const d = `
-    M0 0 
-    H${width * 0.35} 
-    C${width * 0.4} 0 ${width * 0.4} 40 ${width * 0.5} 40 
-    S${width * 0.6} 0 ${width * 0.65} 0 
-    H${width} 
-    V90 
-    H0 
-    Z`;
-
-  return (
-    <View style={styles.svgContainer}>
-      <Svg width={width} height={90} viewBox={`0 0 ${width} 90`}>
-        <Path d={d} fill={color} />
-      </Svg>
-    </View>
-  );
-};
 
 export default function AdminLayout() {
   const { theme } = useTheme();
@@ -281,18 +254,19 @@ export default function AdminLayout() {
             tabBarHideOnKeyboard: true,
             tabBarLabelStyle: {
               fontSize: 10,
-              fontWeight: "800",
-              marginBottom: 0,
+              fontWeight: "700",
+              letterSpacing: 0.3,
             },
             tabBarStyle: {
-              position: "absolute",
-              backgroundColor: "transparent",
-              borderTopWidth: 0,
+              backgroundColor: theme.tabSurface,
+              borderTopWidth: 1,
+              borderTopColor: theme.border,
+              height: 68,
+              paddingBottom: 10,
+              paddingTop: 8,
               elevation: 0,
-              height: 90,
-              bottom: 0,
+              shadowOpacity: 0,
             },
-            tabBarBackground: () => <AdminTabBg color={theme.tabSurface} />,
           }}
         >
         <Tabs.Screen
@@ -326,16 +300,14 @@ export default function AdminLayout() {
         <Tabs.Screen
           name="scan"
           options={{
-            title: "",
+            title: "Scan",
             tabBarStyle: { display: "none" },
-            tabBarIcon: ({ focused }) => (
-              <View style={styles.centerScanButton}>
-                <Ionicons
-                  name="scan-circle-outline"
-                  size={32}
-                  color={focused ? theme.primary : theme.text}
-                />
-              </View>
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons
+                name={focused ? "scan" : "scan-outline"}
+                size={22}
+                color={color}
+              />
             ),
           }}
         />
@@ -492,18 +464,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  svgContainer: {
-    position: "absolute",
-    bottom: 0,
-    width: width,
-  },
-  centerScanButton: {
-    justifyContent: "center",
-    alignItems: "center",
-    width: 60,
-    height: 60,
-    marginTop: -10,
   },
   modalOverlay: {
     flex: 1,

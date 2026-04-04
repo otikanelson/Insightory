@@ -6,28 +6,27 @@ import { useRouter } from "expo-router";
 import * as Sharing from 'expo-sharing';
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  ImageBackground,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View
+    ActivityIndicator,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    View
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { useTheme } from "../../../context/ThemeContext";
+import { useFeatureAccess } from "../../../hooks/useFeatureAccess";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 export default function DataSettingsScreen() {
   const { theme, isDark } = useTheme();
-
-  const backgroundImage = isDark
-    ? require("../../../assets/images/Background7.png")
-    : require("../../../assets/images/Background9.png");
   const router = useRouter();
+  
+  // Check feature access for exporting data
+  const exportAccess = useFeatureAccess('exportData');
 
   // Data Management State
   const [enableBackup, setEnableBackup] = useState(false);
@@ -320,8 +319,8 @@ export default function DataSettingsScreen() {
   };
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={{ flex: 1, backgroundColor: "transparent" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
       
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -369,36 +368,50 @@ export default function DataSettingsScreen() {
             </SettingRow>
 
             {!enableBackup && (
-              <SettingRow
-                icon="save-outline"
-                label="Backup Now"
-                description="Create manual backup"
+              <DisabledButton
                 onPress={performBackup}
+                disabled={!exportAccess.isAllowed}
+                disabledReason={exportAccess.reason}
+                isViewOnly={exportAccess.isViewOnly}
+                style={{ width: '100%' }}
               >
-                <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
-              </SettingRow>
+                <SettingRow
+                  icon="save-outline"
+                  label="Backup Now"
+                  description="Create manual backup"
+                >
+                  <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
+                </SettingRow>
+              </DisabledButton>
             )}
 
-            <SettingRow
-              icon="download-outline"
-              label="Export Inventory CSV"
-              description="Download inventory as CSV"
+            <DisabledButton
               onPress={handleExportData}
-              isLast
+              disabled={!exportAccess.isAllowed}
+              disabledReason={exportAccess.reason}
+              isViewOnly={exportAccess.isViewOnly}
+              style={{ width: '100%' }}
             >
-              {isExporting ? (
-                <ActivityIndicator size="small" color={theme.primary} />
-              ) : (
-                <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
-              )}
-            </SettingRow>
+              <SettingRow
+                icon="download-outline"
+                label="Export Inventory CSV"
+                description="Download inventory as CSV"
+                isLast
+              >
+                {isExporting ? (
+                  <ActivityIndicator size="small" color={theme.primary} />
+                ) : (
+                  <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
+                )}
+              </SettingRow>
+            </DisabledButton>
           </View>
         </View>
 
         <View style={{ height: 100 }} />
       </ScrollView>
       </View>
-    </ImageBackground>
+    </View>
   );
 }
 

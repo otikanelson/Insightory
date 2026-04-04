@@ -5,11 +5,11 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    ImageBackground,
     Modal,
     Pressable,
     ScrollView,
     StyleSheet,
+    Switch,
     Text,
     TextInput,
     View
@@ -26,18 +26,27 @@ interface StaffMember {
   lastLogin: string | null;
   isActive: boolean;
   createdAt: string;
+  permissions?: {
+    viewInventory?: boolean;
+    addProducts?: boolean;
+    editProducts?: boolean;
+    deleteProducts?: boolean;
+    processSales?: boolean;
+    scanBarcodes?: boolean;
+    viewAnalytics?: boolean;
+    exportData?: boolean;
+    manageCategories?: boolean;
+  };
 }
 
 export default function AdminProfileScreen() {
   const { theme, isDark } = useTheme();
-
-  const backgroundImage = isDark
-    ? require("../../../assets/images/Background7.png")
-    : require("../../../assets/images/Background9.png");
   const router = useRouter();
   const { user, role, logout } = useAuth();
 
   const [showPinModal, setShowPinModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteSecurityPin, setDeleteSecurityPin] = useState('');
   const [oldPin, setOldPin] = useState('');
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -49,6 +58,22 @@ export default function AdminProfileScreen() {
   const [showDeleteStaffModal, setShowDeleteStaffModal] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState<StaffMember | null>(null);
   const [deletingStaff, setDeletingStaff] = useState(false);
+  
+  // Staff edit permissions state
+  const [showEditPermissionsModal, setShowEditPermissionsModal] = useState(false);
+  const [staffToEdit, setStaffToEdit] = useState<StaffMember | null>(null);
+  const [editPermissions, setEditPermissions] = useState({
+    viewInventory: true,
+    addProducts: true,
+    editProducts: true,
+    deleteProducts: false,
+    processSales: true,
+    scanBarcodes: true,
+    viewAnalytics: false,
+    exportData: false,
+    manageCategories: false,
+  });
+  const [savingPermissions, setSavingPermissions] = useState(false);
 
   useEffect(() => {
     if (role === 'admin') {
@@ -83,6 +108,52 @@ export default function AdminProfileScreen() {
   const handleDeleteStaff = (staff: StaffMember) => {
     setStaffToDelete(staff);
     setShowDeleteStaffModal(true);
+  };
+
+  const handleEditPermissions = (staff: StaffMember) => {
+    setStaffToEdit(staff);
+    setEditPermissions(staff.permissions || {
+      viewInventory: true,
+      addProducts: true,
+      editProducts: true,
+      deleteProducts: false,
+      processSales: true,
+      scanBarcodes: true,
+      viewAnalytics: false,
+      exportData: false,
+      manageCategories: false,
+    });
+    setShowEditPermissionsModal(true);
+  };
+
+  const toggleEditPermission = (key: keyof typeof editPermissions) => {
+    setEditPermissions(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const savePermissions = async () => {
+    if (!staffToEdit) return;
+
+    setSavingPermissions(true);
+    try {
+      const response = await axios.patch(
+        `${process.env.EXPO_PUBLIC_API_URL}/auth/staff/${staffToEdit._id}/permissions`,
+        { permissions: editPermissions }
+      );
+
+      if (response.data.success) {
+        showSuccessToast("Permissions Updated", `${staffToEdit.name}'s permissions have been updated`);
+        await fetchStaffMembers();
+        setShowEditPermissionsModal(false);
+        setStaffToEdit(null);
+      } else {
+        throw new Error(response.data.error || 'Failed to update permissions');
+      }
+    } catch (error: any) {
+      console.error('Error updating permissions:', error);
+      showErrorToast(error, "Update Failed");
+    } finally {
+      setSavingPermissions(false);
+    }
   };
 
   const confirmDeleteStaff = async () => {
@@ -134,6 +205,7 @@ export default function AdminProfileScreen() {
         // Store admin session for later restoration
         await AsyncStorage.multiSet([
           ['impersonation_active', 'true'],
+          ['impersonation_view_only', 'true'], // SET VIEW-ONLY FLAG
           ['impersonation_admin_id', adminUserId || ''],
           ['impersonation_admin_name', adminUserName || ''],
           ['impersonation_admin_store_id', adminStoreId || ''],
@@ -151,7 +223,7 @@ export default function AdminProfileScreen() {
           ['auth_store_name', staffUser.storeName || ''],
         ]);
         
-        showSuccessToast("Logged in as Staff", `Now viewing as ${staff.name}`);
+        showSuccessToast("View-Only Mode", `Now viewing as ${staff.name} (read-only)`);
         
         // Navigate to staff dashboard (tabs)
         router.replace('/(tabs)');
@@ -248,9 +320,78 @@ export default function AdminProfileScreen() {
     router.replace('/auth/setup' as any);
   };
 
+  const handleDeleteAccount = async () => {
+    try {
+      if (!deleteSecurityPin || deleteSecurityPin.length !== 4) {
+        Toast.show({
+          type: 'error',
+          text1: 'Invalid PIN',
+          text2: 'Please enter your 4-digit Security PIN',
+        });
+        return;
+      }
+
+      // Get stored Security PIN
+      const storedSecurityPin = await AsyncStorage.getItem('admin_security_pin');
+      
+      if (deleteSecurityPin !== storedSecurityPin) {
+        Toast.show({
+          type: 'error',
+          text1: 'Authentication Failed',
+          text2: 'Incorrect Security PIN',
+        });
+        return;
+      }
+
+      // Call backend to delete account
+      const API_URL = process.env.EXPO_PUBLIC_API_URL;
+      const token = await AsyncStorage.getItem('auth_session_token');
+      
+      const response = await fetch(`${API_URL}/auth/admin/account`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ pin: deleteSecurityPin }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        Toast.show({
+          type: 'success',
+          text1: 'Account Deleted',
+          text2: 'Your account, store, and all data have been permanently deleted',
+        });
+
+        // Clear all local data
+        await AsyncStorage.clear();
+
+        // Navigate to setup
+        setTimeout(() => {
+          router.replace('/auth/setup' as any);
+        }, 2000);
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Delete Failed',
+          text2: data.error || 'Could not delete account',
+        });
+      }
+    } catch (error) {
+      console.error('Delete account error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Could not delete account',
+      });
+    }
+  };
+
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={{ flex: 1, backgroundColor: "transparent" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
       
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -390,7 +531,16 @@ export default function AdminProfileScreen() {
                   <View style={[styles.staffStatusDot, { backgroundColor: staff.isActive ? '#34C759' : '#FF3B30' }]} />
                   <Pressable
                     onPress={(e) => {
-                      e.stopPropagation(); // Prevent triggering impersonation
+                      e.stopPropagation();
+                      handleEditPermissions(staff);
+                    }}
+                    style={[styles.editStaffBtn, { backgroundColor: theme.primary + '15' }]}
+                  >
+                    <Ionicons name="settings-outline" size={16} color={theme.primary} />
+                  </Pressable>
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
                       handleDeleteStaff(staff);
                     }}
                     style={[styles.deleteStaffBtn, { backgroundColor: '#FF3B30' + '15' }]}
@@ -421,6 +571,15 @@ export default function AdminProfileScreen() {
         >
           <Ionicons name="log-out-outline" size={22} color="#FF4444" />
           <Text style={styles.logoutText}>Logout from Admin</Text>
+        </Pressable>
+
+        {/* Delete Account Button */}
+        <Pressable 
+          style={[styles.deleteBtn, { borderColor: '#FF3B30', backgroundColor: '#FF3B30' + '10' }]} 
+          onPress={() => setShowDeleteModal(true)}
+        >
+          <Ionicons name="trash-outline" size={22} color="#FF3B30" />
+          <Text style={[styles.deleteText, { color: '#FF3B30' }]}>Delete Account & Store Permanently</Text>
         </Pressable>
 
         <View style={{ height: 50 }} />
@@ -548,8 +707,151 @@ export default function AdminProfileScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Edit Permissions Modal */}
+      <Modal visible={showEditPermissionsModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContentLarge, { backgroundColor: theme.surface }]}>
+            <View style={styles.modalHeader}>
+              <View style={[styles.modalIconBox, { backgroundColor: theme.primary + '15' }]}>
+                <Ionicons name="shield-checkmark" size={28} color={theme.primary} />
+              </View>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>
+                Edit Permissions
+              </Text>
+              <Text style={[styles.modalDesc, { color: theme.subtext }]}>
+                Manage what {staffToEdit?.name} can do
+              </Text>
+            </View>
+
+            <ScrollView style={styles.permissionsScroll} showsVerticalScrollIndicator={false}>
+              {[
+                { key: 'viewInventory', label: 'View Inventory', icon: 'eye-outline', description: 'View all products and stock levels' },
+                { key: 'addProducts', label: 'Add Products', icon: 'add-circle-outline', description: 'Add new products and batches' },
+                { key: 'editProducts', label: 'Edit Products', icon: 'create-outline', description: 'Modify product details and prices' },
+                { key: 'deleteProducts', label: 'Delete Products', icon: 'trash-outline', description: 'Remove products from inventory' },
+                { key: 'processSales', label: 'Process Sales', icon: 'cart-outline', description: 'Complete sales transactions' },
+                { key: 'scanBarcodes', label: 'Scan Barcodes', icon: 'scan-outline', description: 'Use barcode scanner' },
+                { key: 'viewAnalytics', label: 'View Analytics', icon: 'analytics-outline', description: 'Access sales reports and insights' },
+                { key: 'exportData', label: 'Export Data', icon: 'download-outline', description: 'Export inventory and sales data' },
+                { key: 'manageCategories', label: 'Manage Categories', icon: 'folder-outline', description: 'Add and edit product categories' },
+              ].map((perm) => (
+                <View
+                  key={perm.key}
+                  style={[
+                    styles.permissionEditRow,
+                    { backgroundColor: theme.background, borderColor: theme.border }
+                  ]}
+                >
+                  <View style={[styles.permIconBox, { backgroundColor: theme.primary + '15' }]}>
+                    <Ionicons name={perm.icon as any} size={18} color={theme.primary} />
+                  </View>
+                  <View style={styles.permTextBox}>
+                    <Text style={[styles.permLabel, { color: theme.text }]}>
+                      {perm.label}
+                    </Text>
+                    <Text style={[styles.permDesc, { color: theme.subtext }]}>
+                      {perm.description}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={editPermissions[perm.key as keyof typeof editPermissions]}
+                    onValueChange={() => toggleEditPermission(perm.key as keyof typeof editPermissions)}
+                    trackColor={{ true: theme.primary, false: theme.border }}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+
+            <View style={styles.modalActions}>
+              <Pressable
+                style={[
+                  styles.modalBtn,
+                  { backgroundColor: theme.background, borderWidth: 1, borderColor: theme.border },
+                ]}
+                onPress={() => {
+                  setShowEditPermissionsModal(false);
+                  setStaffToEdit(null);
+                }}
+                disabled={savingPermissions}
+              >
+                <Text style={{ color: theme.text, fontWeight: '600' }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalBtn, { backgroundColor: theme.primary }]}
+                onPress={savePermissions}
+                disabled={savingPermissions}
+              >
+                {savingPermissions ? (
+                  <ActivityIndicator color="#FFF" size="small" />
+                ) : (
+                  <Text style={{ color: '#FFF', fontWeight: '700' }}>Save Changes</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Account Modal */}
+      <Modal visible={showDeleteModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+            <View style={[styles.modalIconBox, { backgroundColor: '#FF3B30' + '15' }]}>
+              <Ionicons name="warning" size={32} color="#FF3B30" />
+            </View>
+
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Delete Account & Store?</Text>
+            <Text style={[styles.modalDesc, { color: theme.subtext }]}>
+              This will permanently delete your admin account, store, all staff members, and all inventory data. This action cannot be undone.
+            </Text>
+
+            <View style={[styles.warningBox, { backgroundColor: '#FF3B30' + '10', borderColor: '#FF3B30' }]}>
+              <Ionicons name="alert-circle" size={18} color="#FF3B30" />
+              <Text style={[styles.warningText, { color: theme.text }]}>
+                All staff accounts and inventory will be deleted
+              </Text>
+            </View>
+
+            <TextInput
+              style={[
+                styles.pinInput,
+                { color: theme.text, borderColor: '#FF3B30', backgroundColor: theme.background },
+              ]}
+              placeholder="Enter Security PIN to confirm"
+              placeholderTextColor={theme.subtext}
+              secureTextEntry
+              keyboardType="numeric"
+              maxLength={4}
+              value={deleteSecurityPin}
+              onChangeText={setDeleteSecurityPin}
+            />
+
+            <View style={styles.modalActions}>
+              <Pressable
+                style={[
+                  styles.modalBtn,
+                  { backgroundColor: theme.background, borderWidth: 1, borderColor: theme.border },
+                ]}
+                onPress={() => {
+                  setShowDeleteModal(false);
+                  setDeleteSecurityPin('');
+                }}
+              >
+                <Text style={{ color: theme.text, fontWeight: '600' }}>Cancel</Text>
+              </Pressable>
+              <Pressable 
+                style={[styles.modalBtn, { backgroundColor: '#FF3B30' }]} 
+                onPress={handleDeleteAccount}
+              >
+                <Text style={{ color: '#FFF', fontWeight: '700' }}>Delete Everything</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
-    </ImageBackground>
+    </View>
   );
 }
 
@@ -764,6 +1066,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  editStaffBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   deleteStaffBtn: {
     width: 36,
     height: 36,
@@ -803,6 +1112,36 @@ const styles = StyleSheet.create({
     color: '#FF4444',
     fontWeight: '900',
     fontSize: 14,
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 2,
+    marginTop: 12,
+  },
+  deleteText: {
+    fontWeight: '900',
+    fontSize: 14,
+  },
+  warningBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 20,
+    width: '100%',
+  },
+  warningText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
   },
   modalOverlay: {
     flex: 1,
@@ -861,5 +1200,48 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  modalContentLarge: {
+    width: '100%',
+    maxWidth: 500,
+    maxHeight: '80%',
+    padding: 30,
+    borderRadius: 30,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  permissionsScroll: {
+    maxHeight: 400,
+    marginBottom: 20,
+  },
+  permissionEditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 10,
+    gap: 12,
+  },
+  permIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  permTextBox: {
+    flex: 1,
+  },
+  permLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  permDesc: {
+    fontSize: 11,
+    lineHeight: 14,
   },
 });

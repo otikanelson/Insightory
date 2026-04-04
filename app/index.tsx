@@ -4,12 +4,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Image,
-  ImageBackground,
-  Pressable,
-  StyleSheet,
-  Text,
-  View
+    Pressable,
+    StyleSheet,
+    Text,
+    View
 } from "react-native";
 import { AIOnboardingModal } from "../components/AIOnboardingModal";
 import { useAuth } from "../context/AuthContext";
@@ -19,10 +17,7 @@ export default function WelcomeScreen() {
   const router = useRouter();
   const { theme, isDark } = useTheme();
 
-  const backgroundImage = isDark
-    ? require("../assets/images/Background7.png")
-    : require("../assets/images/Background9.png");
-  const { role } = useAuth();
+    const { role } = useAuth();
   const [showAIOnboarding, setShowAIOnboarding] = useState(false);
   const [showHelpTooltipIntro, setShowHelpTooltipIntro] = useState(false);
 
@@ -109,8 +104,8 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={[styles.container, { backgroundColor: "transparent" }]}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
         {/* Semicircular Header */}
       <View style={[styles.headerCurve, { backgroundColor: theme.header }]}>
         <Text style={styles.headerTitle}>StockQ</Text>
@@ -118,14 +113,13 @@ export default function WelcomeScreen() {
 
       {/* Centered Content */}
       <View style={styles.centerContent}>
+        <View style={[styles.logoMark, { backgroundColor: theme.primaryLight }]}>
+          <Ionicons name="cube" size={48} color={theme.primary} />
+        </View>
+        <Text style={[styles.appName, { color: theme.primary }]}>StockQ</Text>
         <Text style={[styles.subtitle, { color: theme.subtext }]}>
           Smart tracking for products & expiry dates
         </Text>
-        <Image
-          source={require("../assets/images/logo.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
       </View>
 
       {/* Action Buttons */}
@@ -178,7 +172,7 @@ export default function WelcomeScreen() {
         onClose={handleHelpIntroClose}
       />
     </View>
-    </ImageBackground>
+    </View>
   );
 }
 
@@ -206,13 +200,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 40,
   },
+  logoMark: {
+    width: 100,
+    height: 100,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  appName: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 4,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
   subtitle: {
     fontSize: 16,
     textAlign: "center",
     lineHeight: 24,
     marginBottom: 30,
   },
-  logo: { width: 220, height: 220 },
   actions: { padding: 24, gap: 14, marginBottom: 40 },
   primaryButton: {
     paddingVertical: 15,

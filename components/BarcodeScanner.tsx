@@ -16,6 +16,7 @@ interface ScannerProps {
   tabColor?: string;
   children?: React.ReactNode;
   cameraKey?: number;
+  onCameraError?: () => void;
 }
 
 export const BarcodeScanner = ({
@@ -27,26 +28,38 @@ export const BarcodeScanner = ({
   tabColor = "#00FF00",
   children,
   cameraKey = 0,
+  onCameraError,
 }: ScannerProps) => {
+  console.log('🎥 [BarcodeScanner] Component rendering with cameraKey:', cameraKey);
   const scanAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    console.log('🎥 BarcodeScanner mounted with cameraKey:', cameraKey);
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(scanAnim, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scanAnim, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
-  }, []);
+    console.log('🎥 [BarcodeScanner] Mounted with cameraKey:', cameraKey);
+    try {
+      const animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(scanAnim, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scanAnim, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      animation.start();
+      
+      return () => {
+        console.log('🛑 [BarcodeScanner] Unmounting - stopping animation');
+        animation.stop();
+      };
+    } catch (err) {
+      console.error('❌ [BarcodeScanner] Animation error:', err);
+    }
+  }, [cameraKey]);
 
   return (
     <View style={styles.container}>
@@ -57,6 +70,12 @@ export const BarcodeScanner = ({
         enableTorch={torch}
         onBarcodeScanned={loading ? undefined : onScan}
         barcodeScannerSettings={{ barcodeTypes: ["ean13", "upc_a", "code128", "qr"] }}
+        onMountError={(error) => {
+          console.error('❌ [BarcodeScanner] Camera mount error:', error);
+          if (onCameraError) {
+            onCameraError();
+          }
+        }}
       />
 
       {/* Dark Overlay with Viewfinder hole */}

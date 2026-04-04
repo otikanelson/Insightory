@@ -10,140 +10,73 @@ import {
     Text,
     View,
 } from "react-native";
-import { padding } from "../constants/spacing";
 import { useTheme } from "../context/ThemeContext";
 import { Product } from "../hooks/useProducts";
 import { Prediction } from "../types/ai-predictions";
 
 const { width } = Dimensions.get("window");
+const CARD_WIDTH = width / 2 - 27;
 
-// --- SKELETON COMPONENT ---
+// --- SKELETON ---
 export const ProductCardSkeleton = () => {
   const { theme, isDark } = useTheme();
-  const pulseAnim = useRef(new Animated.Value(0.4)).current;
+  const pulse = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 0.8,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 0.4,
-          duration: 800,
-          useNativeDriver: true,
-        }),
+        Animated.timing(pulse, { toValue: 0.9, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.4, duration: 900, useNativeDriver: true }),
       ])
     ).start();
   }, []);
 
+  const skeletonBg = isDark ? '#ffffff0D' : '#0000000A';
+
   return (
-    <View
-      style={[
-        styles.card,
-        { backgroundColor: theme.surface, borderColor: theme.border },
-      ]}
-    >
+    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
       <View style={styles.topLabels}>
-        <View
-          style={[
-            styles.pill,
-            {
-              backgroundColor: isDark ? "#ffffff10" : "#00000005",
-              width: 50,
-              height: 18,
-            },
-          ]}
-        />
-        <View
-          style={[
-            styles.pill,
-            {
-              backgroundColor: isDark ? "#ffffff10" : "#00000005",
-              width: 40,
-              height: 18,
-            },
-          ]}
-        />
+        <Animated.View style={[styles.skeletonPill, { backgroundColor: skeletonBg, opacity: pulse }]} />
+        <Animated.View style={[styles.skeletonPill, { backgroundColor: skeletonBg, width: 36, opacity: pulse }]} />
       </View>
-
-      <Animated.View
-        style={[
-          styles.imageWrapper,
-          {
-            backgroundColor: isDark ? "#1A1A1A" : "#F5F5F7",
-            opacity: pulseAnim,
-          },
-        ]}
-      >
-        <Ionicons
-          name="cube-outline"
-          size={40}
-          color={isDark ? "#ffffff10" : "#00000010"}
-        />
+      <Animated.View style={[styles.imageWrapper, { backgroundColor: skeletonBg, opacity: pulse }]}>
+        <Ionicons name="cube-outline" size={36} color={isDark ? '#ffffff10' : '#00000010'} />
       </Animated.View>
-
       <View style={styles.footer}>
-        <View style={{ flex: 1 }}>
-          <Animated.View
-            style={{
-              height: 10,
-              width: "40%",
-              backgroundColor: theme.subtext + "20",
-              marginBottom: 6,
-              borderRadius: 4,
-              opacity: pulseAnim,
-            }}
-          />
-          <Animated.View
-            style={{
-              height: 14,
-              width: "80%",
-              backgroundColor: theme.text + "20",
-              borderRadius: 4,
-              opacity: pulseAnim,
-            }}
-          />
+        <View style={{ flex: 1, gap: 6 }}>
+          <Animated.View style={{ height: 9, width: '40%', backgroundColor: skeletonBg, borderRadius: 4, opacity: pulse }} />
+          <Animated.View style={{ height: 13, width: '75%', backgroundColor: skeletonBg, borderRadius: 4, opacity: pulse }} />
         </View>
-        <View
-          style={[
-            styles.arrowCircle,
-            { backgroundColor: isDark ? "#ffffff08" : "#00000005" },
-          ]}
-        />
+        <Animated.View style={[styles.arrowCircle, { backgroundColor: skeletonBg, opacity: pulse }]} />
       </View>
     </View>
   );
 };
 
-// --- MAIN PRODUCT CARD ---
+// --- MAIN CARD ---
 interface ProductCardProps {
   item: Product;
   prediction?: Prediction | null;
   sortField?: 'name' | 'totalQuantity' | 'risk' | 'velocity';
 }
 
+const getRiskColor = (score: number) => {
+  if (score >= 70) return '#EF4444';
+  if (score >= 50) return '#F59E0B';
+  if (score >= 30) return '#EAB308';
+  return null;
+};
+
+const getVelocityIndicator = (v: number) => {
+  if (v > 5) return { icon: 'flash' as const, color: '#10B981' };
+  if (v < 0.5) return { icon: 'hourglass' as const, color: '#F59E0B' };
+  return null;
+};
+
 export const ProductCard = React.memo(({ item, prediction, sortField = 'name' }: ProductCardProps) => {
   const { theme, isDark } = useTheme();
   const router = useRouter();
   const [isLoaded, setIsLoaded] = useState(false);
-
-  // Get risk color based on score
-  const getRiskColor = (riskScore: number) => {
-    if (riskScore >= 70) return '#FF3B30'; // Red
-    if (riskScore >= 50) return '#FF9500'; // Orange
-    if (riskScore >= 30) return '#FFCC00'; // Yellow
-    return null; // No indicator for low risk
-  };
-
-  // Get velocity indicator
-  const getVelocityIndicator = (velocity: number) => {
-    if (velocity > 5) return { icon: 'flash' as const, color: '#34C759' }; // Fast
-    if (velocity < 0.5) return { icon: 'hourglass' as const, color: '#FF9500' }; // Slow
-    return null;
-  };
 
   const riskScore = prediction?.metrics?.riskScore || 0;
   const velocity = prediction?.metrics?.velocity || 0;
@@ -152,65 +85,45 @@ export const ProductCard = React.memo(({ item, prediction, sortField = 'name' }:
 
   return (
     <Pressable
-      onPress={() =>
-        router.push(`/product/${item._id}` as Href)}
-      style={[
+      onPress={() => router.push(`/product/${item._id}` as Href)}
+      style={({ pressed }) => [
         styles.card,
-        { backgroundColor: theme.surface, borderColor: theme.border },
+        { backgroundColor: theme.surface, borderColor: theme.border, opacity: pressed ? 0.88 : 1 },
       ]}
     >
-      {/* Risk Indicator Dot - Top Right */}
       {riskColor && riskScore > 0 && (
         <View style={[styles.riskDot, { backgroundColor: riskColor }]} />
       )}
 
       <View style={styles.topLabels}>
-        <View
-          style={[
-            styles.pill,
-            styles.categoryPill,
-            { backgroundColor: isDark ? "#ffffff10" : "#00000005" },
-          ]}
-        >
-          <Ionicons name="pricetag-outline" size={10} color={theme.subtext} />
+        <View style={[styles.pill, styles.categoryPill, { backgroundColor: isDark ? '#ffffff0D' : '#0000000A' }]}>
+          <Ionicons name="pricetag-outline" size={9} color={theme.subtext} />
           <Text style={[styles.pillText, { color: theme.subtext }]} numberOfLines={1}>
-            {item.category || "General"}
+            {item.category || 'General'}
           </Text>
         </View>
-        <View
-          style={[
-            styles.pill,
-            { backgroundColor: isDark ? "#ffffff10" : "#00000005" },
-          ]}
-        >
-          <Ionicons name="flash-outline" size={10} color={theme.subtext} />
-          <Text style={[styles.pillText, { color: theme.subtext }]}>
-            {item.isPerishable ? "FEFO" : "STD"}
+        <View style={[styles.pill, { backgroundColor: item.isPerishable ? theme.primaryLight : (isDark ? '#ffffff0D' : '#0000000A') }]}>
+          <Ionicons
+            name={item.isPerishable ? 'hourglass-outline' : 'cube-outline'}
+            size={9}
+            color={item.isPerishable ? theme.primary : theme.subtext}
+          />
+          <Text style={[styles.pillText, { color: item.isPerishable ? theme.primary : theme.subtext }]}>
+            {item.isPerishable ? 'FEFO' : 'STD'}
           </Text>
         </View>
       </View>
 
-      <View
-        style={[
-          styles.imageWrapper,
-          { backgroundColor: isDark ? "#00000035" : "#a2a2a22f" },
-        ]}
-      >
-        {/* Velocity Indicator - Bottom Left of Image */}
+      <View style={[styles.imageWrapper, { backgroundColor: isDark ? '#ffffff08' : '#00000008' }]}>
         {velocityIndicator && (
-          <View style={[styles.velocityIndicator, { backgroundColor: velocityIndicator.color + '20' }]}>
-            <Ionicons name={velocityIndicator.icon} size={10} color={velocityIndicator.color} />
+          <View style={[styles.velocityBadge, { backgroundColor: velocityIndicator.color + '22' }]}>
+            <Ionicons name={velocityIndicator.icon} size={9} color={velocityIndicator.color} />
           </View>
         )}
-
         {!isLoaded && (
-          <Ionicons
-            name="cube-outline"
-            size={40}
-            color={isDark ? "#ffffff10" : "#00000010"}
-          />
+          <Ionicons name="cube-outline" size={38} color={isDark ? '#ffffff15' : '#00000012'} />
         )}
-        {item.imageUrl && item.imageUrl !== "cube" && item.imageUrl !== "" && (
+        {item.imageUrl && item.imageUrl !== 'cube' && item.imageUrl !== '' && (
           <Image
             source={{ uri: item.imageUrl }}
             style={[styles.image, { opacity: isLoaded ? 1 : 0 }]}
@@ -225,45 +138,27 @@ export const ProductCard = React.memo(({ item, prediction, sortField = 'name' }:
         <View style={{ flex: 1 }}>
           {sortField === 'risk' && prediction ? (
             <>
-              <Text style={[styles.quantityLabel, { color: riskColor || theme.subtext }]}>
-                Risk Score
-              </Text>
+              <Text style={[styles.quantityLabel, { color: riskColor || theme.subtext }]}>Risk Score</Text>
               <Text style={[styles.name, { color: riskColor || theme.text }]} numberOfLines={1}>
                 {Math.round(riskScore)}/100
               </Text>
             </>
           ) : sortField === 'velocity' && prediction ? (
             <>
-              <Text style={[styles.quantityLabel, { color: velocityIndicator?.color || theme.subtext }]}>
-                Velocity
-              </Text>
+              <Text style={[styles.quantityLabel, { color: velocityIndicator?.color || theme.subtext }]}>Velocity</Text>
               <Text style={[styles.name, { color: velocityIndicator?.color || theme.text }]} numberOfLines={1}>
                 {velocity.toFixed(1)}/day
               </Text>
             </>
           ) : (
             <>
-              <Text style={[styles.quantityLabel, { color: theme.subtext }]}>
-                {item.totalQuantity} Items
-              </Text>
-              <Text style={[styles.name, { color: theme.text }]} numberOfLines={1}>
-                {item.name}
-              </Text>
+              <Text style={[styles.quantityLabel, { color: theme.subtext }]}>{item.totalQuantity} items</Text>
+              <Text style={[styles.name, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
             </>
           )}
         </View>
-        <View
-          style={[
-            styles.arrowCircle,
-            { backgroundColor: isDark ? "#ffffff08" : "#00000005" },
-          ]}
-        >
-          <Ionicons
-            name="arrow-up-outline"
-            size={14}
-            color={theme.text}
-            style={{ transform: [{ rotate: "45deg" }] }}
-          />
+        <View style={[styles.arrowCircle, { backgroundColor: theme.primaryLight }]}>
+          <Ionicons name="arrow-forward" size={13} color={theme.primary} />
         </View>
       </View>
     </Pressable>
@@ -272,10 +167,10 @@ export const ProductCard = React.memo(({ item, prediction, sortField = 'name' }:
 
 const styles = StyleSheet.create({
   card: {
-    width: width / 2 - 27,
-    borderRadius: 28,
+    width: CARD_WIDTH,
+    borderRadius: 24,
     borderWidth: 1,
-    padding: padding.form,
+    padding: 12,
     marginBottom: 16,
     position: 'relative',
   },
@@ -287,60 +182,52 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    elevation: 3,
   },
-  velocityIndicator: {
+  velocityBadge: {
     position: 'absolute',
     bottom: 8,
     left: 8,
     width: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 5,
   },
-  topLabels: { flexDirection: "row", gap: 6, marginBottom: 12 },
+  topLabels: { flexDirection: 'row', gap: 5, marginBottom: 10 },
   pill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 7,
     paddingVertical: 4,
-    borderRadius: 10,
+    borderRadius: 8,
   },
-  categoryPill: {
-    flex: 1,
-    minWidth: 0, // Important for text truncation to work
-  },
-  pillText: { fontSize: 8, fontWeight: "700", textTransform: "uppercase" },
+  categoryPill: { flex: 1, minWidth: 0 },
+  pillText: { fontSize: 8, fontWeight: '700', textTransform: 'uppercase' },
   imageWrapper: {
-    width: "100%",
-    height: 140,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
+    width: '100%',
+    height: 130,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 12,
-    padding: 5,
   },
-  image: { width: "95%", height: "95%", borderRadius: 22 },
+  image: { width: '90%', height: '90%', borderRadius: 16 },
   footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    paddingHorizontal: 4,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: 2,
   },
-  quantityLabel: { fontSize: 12, fontWeight: "500", marginBottom: 2 },
-  name: { fontSize: 15, fontWeight: "800" },
+  quantityLabel: { fontSize: 11, fontWeight: '500', marginBottom: 2 },
+  name: { fontSize: 14, fontWeight: '800' },
   arrowCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  skeletonPill: { height: 18, width: 52, borderRadius: 8 },
 });

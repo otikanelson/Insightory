@@ -1,37 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { Dimensions, StyleSheet, View } from "react-native";
-import { Path, Svg } from "react-native-svg";
+import { View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 
-const { width } = Dimensions.get("window");
-
-const TabBg = ({ color }: { color: string }) => {
-  const d = `
-    M0 0 
-    H${width / 2 - 50} 
-    C${width / 2 - 35} 0 ${width / 2 - 30} 40 ${width / 2} 40 
-    S${width / 2 + 35} 0 ${width / 2 + 50} 0 
-    H${width} 
-    V90 
-    H0 
-    Z
-  `;
-
-  return (
-    <View style={styles.svgContainer}>
-      <Svg width={width} height={90} viewBox={`0 0 ${width} 90`}>
-        <Path d={d} fill={color} />
-      </Svg>
-    </View>
-  );
-};
-
 export default function TabsLayout() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -39,22 +15,37 @@ export default function TabsLayout() {
           tabBarInactiveTintColor: theme.subtext,
           tabBarHideOnKeyboard: true,
           tabBarStyle: {
-            position: "absolute",
-            backgroundColor: "transparent",
-            borderTopWidth: 0,
+            backgroundColor: theme.tabSurface,
+            borderTopWidth: 1,
+            borderTopColor: theme.border,
+            height: 68,
+            paddingBottom: 10,
+            paddingTop: 8,
             elevation: 0,
-            height: 90,
-            bottom: 0,
+            shadowOpacity: 0,
           },
-          tabBarBackground: () => <TabBg color={theme.tabSurface} />,
+          tabBarLabelStyle: {
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 0.3,
+          },
+          tabBarItemStyle: {
+            borderRadius: 12,
+          },
         }}
       >
         <Tabs.Screen
           name="index"
           options={{
             title: "Dashboard",
-            tabBarIcon: ({ color }) => (
-              <Ionicons name="grid-outline" size={24} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <View style={focused ? {
+                backgroundColor: theme.primaryLight,
+                borderRadius: 10,
+                padding: 4,
+              } : { padding: 4 }}>
+                <Ionicons name={focused ? "grid" : "grid-outline"} size={20} color={color} />
+              </View>
             ),
           }}
         />
@@ -62,8 +53,14 @@ export default function TabsLayout() {
           name="inventory"
           options={{
             title: "Inventory",
-            tabBarIcon: ({ color }) => (
-              <Ionicons name="cube-outline" size={24} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <View style={focused ? {
+                backgroundColor: theme.primaryLight,
+                borderRadius: 10,
+                padding: 4,
+              } : { padding: 4 }}>
+                <Ionicons name={focused ? "cube" : "cube-outline"} size={20} color={color} />
+              </View>
             ),
           }}
         />
@@ -71,24 +68,37 @@ export default function TabsLayout() {
           name="scan"
           options={{
             tabBarStyle: { display: "none" },
-            title: "",
-            tabBarIcon: ({ focused }) => (
-              <View style={styles.scanIconWrapper}>
-                <Ionicons
-                  name="scan-circle-outline"
-                  size={32}
-                  color={focused ? theme.primary : theme.text}
-                />
+            title: "Scan",
+            tabBarIcon: ({ color, focused }) => (
+              <View style={{
+                backgroundColor: theme.primary,
+                borderRadius: 16,
+                padding: 8,
+                marginBottom: 4,
+                shadowColor: theme.primary,
+                shadowOffset: { width: 4, height: 4 },
+                shadowOpacity: 0.4,
+                shadowRadius: 8,
+                elevation: 6,
+              }}>
+                <Ionicons name="qr-code" size={22} color="#FFF" />
               </View>
             ),
+            tabBarLabel: () => null,
           }}
         />
         <Tabs.Screen
           name="add-products"
           options={{
             title: "Add",
-            tabBarIcon: ({ color }) => (
-              <Ionicons name="add-circle-outline" size={24} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <View style={focused ? {
+                backgroundColor: theme.primaryLight,
+                borderRadius: 10,
+                padding: 4,
+              } : { padding: 4 }}>
+                <Ionicons name={focused ? "add-circle" : "add-circle-outline"} size={20} color={color} />
+              </View>
             ),
           }}
         />
@@ -96,8 +106,14 @@ export default function TabsLayout() {
           name="FEFO"
           options={{
             title: "FEFO",
-            tabBarIcon: ({ color }) => (
-              <Ionicons name="hourglass" size={24} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <View style={focused ? {
+                backgroundColor: theme.primaryLight,
+                borderRadius: 10,
+                padding: 4,
+              } : { padding: 4 }}>
+                <Ionicons name={focused ? "hourglass" : "hourglass-outline"} size={20} color={color} />
+              </View>
             ),
           }}
         />
@@ -105,18 +121,3 @@ export default function TabsLayout() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  svgContainer: {
-    position: "absolute",
-    bottom: 0,
-    width: width,
-  },
-  scanIconWrapper: {
-    justifyContent: "center",
-    alignItems: "center",
-    width: 60,
-    height: 60,
-    marginTop: -10,
-  },
-});

@@ -10,7 +10,6 @@ import {
     BackHandler,
     FlatList,
     Image,
-    ImageBackground,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -32,16 +31,15 @@ import { hasSecurityPIN } from "../../utils/securityPINCheck";
 
 export default function AddProducts() {
   const { theme, isDark } = useTheme();
-
-  const backgroundImage = isDark
-    ? require("../../assets/images/Background7.png")
-    : require("../../assets/images/Background9.png");
   const router = useRouter();
   const navigation: any = useNavigation();
   const params = useLocalSearchParams();
   const { products } = useProducts();
 
   const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/products`;
+
+  // Check feature access
+  const featureAccess = useFeatureAccess('addProducts');
 
   const [image, setImage] = useState<string | null>(null);
   const [isPerishable, setIsPerishable] = useState(false);
@@ -63,6 +61,7 @@ export default function AddProducts() {
   const [showModeHelp, setShowModeHelp] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [totalSteps] = useState(3);
+
   const [showFieldHelp, setShowFieldHelp] = useState<string | null>(null);
   const [highlightErrors, setHighlightErrors] = useState<string[]>([]); // For red flash effect
   const [showRefreshConfirm, setShowRefreshConfirm] = useState(false);
@@ -81,6 +80,18 @@ export default function AddProducts() {
   });
 
   const mode = (params.mode as "registry" | "inventory" | "manual") || "manual";
+
+  // Show overlay if access is denied
+  if (!featureAccess.isAllowed) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <DisabledFeatureOverlay 
+          reason={featureAccess.reason || 'Access denied'} 
+          isViewOnly={featureAccess.isViewOnly}
+        />
+      </View>
+    );
+  }
   
   // Determine if fields should be locked
   // Lock when: 1) explicitly locked via params, OR 2) existingProduct is set (adding batch to registered product)
@@ -973,8 +984,8 @@ export default function AddProducts() {
   };
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={{ flex: 1, backgroundColor: "transparent" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
@@ -2086,7 +2097,7 @@ export default function AddProducts() {
         </View>
       </Modal>
     </View>
-    </ImageBackground>
+    </View>
   );
 }
 

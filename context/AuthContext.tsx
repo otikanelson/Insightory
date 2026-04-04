@@ -14,6 +14,18 @@ interface User {
   storeId?: string;
   storeName?: string;
   isAuthor?: boolean;
+  permissions?: {
+    viewInventory?: boolean;
+    addProducts?: boolean;
+    editProducts?: boolean;
+    deleteProducts?: boolean;
+    processSales?: boolean;
+    scanBarcodes?: boolean;
+    viewAnalytics?: boolean;
+    exportData?: boolean;
+    manageCategories?: boolean;
+  };
+  isViewOnly?: boolean; // Flag for admin impersonation view-only mode
 }
 
 interface AuthContextType {
@@ -142,6 +154,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser({
             ...userData,
             isAuthor: userData.role === 'admin' && userData.id === 'author',
+            permissions: userData.permissions || {},
+            isViewOnly: false,
           });
           setRole(userData.role);
           setIsAuthenticated(true);
@@ -325,16 +339,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check if user has permission for an action
   const hasPermission = (action: string): boolean => {
-    const permissions: Record<string, string[]> = {
-      admin: ['*'], // All permissions
-      staff: ['view', 'add', 'edit', 'sell', 'scan'],
-      viewer: ['view'],
-    };
+    // If admin is in view-only mode (impersonating), deny all write actions
+    if (user?.isViewOnly) {
+      const readOnlyActions = ['view', 'viewInventory', 'viewAnalytics'];
+      return readOnlyActions.includes(action);
+    }
 
-    if (!role) return false;
-    
-    const userPermissions = permissions[role] || [];
-    return userPermissions.includes('*') || userPermissions.includes(action);
+    // Admin has all permissions
+    if (role === 'admin') return true;
+
+    // Staff permissions based on their assigned permissions
+    if (role === 'staff' && user?.permissions) {
+      const permissionMap: Record<string, keyof typeof user.permissions> = {
+        view: 'viewInventory',
+        viewInventory: 'viewInventory',
+        add: 'addProducts',
+        addProducts: 'addProducts',
+        edit: 'editProducts',
+        editProducts: 'editProducts',
+        delete: 'deleteProducts',
+        deleteProducts: 'deleteProducts',
+        sell: 'processSales',
+        processSales: 'processSales',
+        scan: 'scanBarcodes',
+        scanBarcodes: 'scanBarcodes',
+        viewAnalytics: 'viewAnalytics',
+        exportData: 'exportData',
+        manageCategories: 'manageCategories',
+      };
+
+      const permKey = permissionMap[action];
+      return permKey ? user.permissions[permKey] === true : false;
+    }
+
+    // Viewer role (read-only)
+    if (role === 'viewer') {
+      return action === 'view' || action === 'viewInventory';
+    }
+
+    return false;
   };
 
   // Verify Security PIN for sensitive operations (product registration, deletion)

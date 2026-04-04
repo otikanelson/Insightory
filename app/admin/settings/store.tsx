@@ -4,7 +4,6 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    ImageBackground,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -17,10 +16,6 @@ import { useTheme } from "../../../context/ThemeContext";
 
 export default function StoreSettingsScreen() {
   const { theme, isDark } = useTheme();
-
-  const backgroundImage = isDark
-    ? require("../../../assets/images/Background7.png")
-    : require("../../../assets/images/Background9.png");
   const router = useRouter();
 
   // Store Information State
@@ -104,8 +99,8 @@ export default function StoreSettingsScreen() {
   }
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={{ flex: 1, backgroundColor: "transparent" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
       
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -267,7 +262,7 @@ export default function StoreSettingsScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
     </View>
-    </ImageBackground>
+    </View>
   );
 }
 

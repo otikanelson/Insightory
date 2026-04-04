@@ -3,7 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    ImageBackground,
     Modal,
     Pressable,
     ScrollView,
@@ -19,17 +18,17 @@ import { useTheme } from '../context/ThemeContext';
 export default function ProfileScreen() {
   const { theme, isDark } = useTheme();
 
-  const backgroundImage = isDark
-    ? require("../assets/images/Background7.png")
-    : require("../assets/images/Background9.png");
-  const router = useRouter();
+    const router = useRouter();
   const { user, role, logout } = useAuth();
 
   const [showPinModal, setShowPinModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePin, setDeletePin] = useState('');
   const [oldPin, setOldPin] = useState('');
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [isImpersonating, setIsImpersonating] = useState(false);
+  const [isViewOnly, setIsViewOnly] = useState(false);
   const [adminName, setAdminName] = useState('');
 
   // Check if admin is impersonating on mount
@@ -37,14 +36,85 @@ export default function ProfileScreen() {
     const checkImpersonation = async () => {
       const impersonationActive = await AsyncStorage.getItem('impersonation_active');
       const impersonationAdminName = await AsyncStorage.getItem('impersonation_admin_name');
+      const viewOnlyMode = await AsyncStorage.getItem('impersonation_view_only');
       
       if (impersonationActive === 'true') {
         setIsImpersonating(true);
+        setIsViewOnly(viewOnlyMode === 'true');
         setAdminName(impersonationAdminName || 'Admin');
       }
     };
     checkImpersonation();
   }, []);
+
+  const handleDeleteAccount = async () => {
+    try {
+      if (!deletePin || deletePin.length !== 4) {
+        Toast.show({
+          type: 'error',
+          text1: 'Invalid PIN',
+          text2: 'Please enter your 4-digit PIN',
+        });
+        return;
+      }
+
+      // Get stored PIN
+      const storedPin = await AsyncStorage.getItem('auth_staff_pin');
+      
+      if (deletePin !== storedPin) {
+        Toast.show({
+          type: 'error',
+          text1: 'Authentication Failed',
+          text2: 'Incorrect PIN',
+        });
+        return;
+      }
+
+      // Call backend to delete account
+      const API_URL = process.env.EXPO_PUBLIC_API_URL;
+      const token = await AsyncStorage.getItem('auth_session_token');
+      
+      const response = await fetch(`${API_URL}/auth/staff/account`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ pin: deletePin }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        Toast.show({
+          type: 'success',
+          text1: 'Account Deleted',
+          text2: 'Your account has been permanently deleted',
+        });
+
+        // Clear all local data
+        await AsyncStorage.clear();
+
+        // Navigate to setup
+        setTimeout(() => {
+          router.replace('/auth/setup' as any);
+        }, 1500);
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Delete Failed',
+          text2: data.error || 'Could not delete account',
+        });
+      }
+    } catch (error) {
+      console.error('Delete account error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Could not delete account',
+      });
+    }
+  };
 
   const handleUpdatePin = async () => {
     try {
@@ -140,6 +210,7 @@ export default function ProfileScreen() {
       // Clear impersonation flags
       await AsyncStorage.multiRemove([
         'impersonation_active',
+        'impersonation_view_only',
         'impersonation_admin_id',
         'impersonation_admin_name',
         'impersonation_admin_store_id',
@@ -188,8 +259,8 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={{ flex: 1, backgroundColor: "transparent" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
       
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -220,17 +291,28 @@ export default function ProfileScreen() {
 
         {/* Back to Admin Button (shown when impersonating) */}
         {isImpersonating && (
-          <Pressable
-            style={[styles.backToAdminBtn, { backgroundColor: theme.primary, borderColor: theme.primary }]}
-            onPress={handleBackToAdmin}
-          >
-            <Ionicons name="arrow-back-circle" size={22} color="#FFF" />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.backToAdminText}>Return to Admin Account</Text>
-              <Text style={styles.backToAdminSubtext}>Currently viewing as {user?.name}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#FFF" />
-          </Pressable>
+          <>
+            {isViewOnly && (
+              <View style={[styles.viewOnlyBanner, { backgroundColor: '#FF9500', borderColor: '#FF9500' }]}>
+                <Ionicons name="eye-outline" size={22} color="#FFF" />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.viewOnlyTitle}>VIEW-ONLY MODE</Text>
+                  <Text style={styles.viewOnlyText}>You cannot perform any actions in this view</Text>
+                </View>
+              </View>
+            )}
+            <Pressable
+              style={[styles.backToAdminBtn, { backgroundColor: theme.primary, borderColor: theme.primary }]}
+              onPress={handleBackToAdmin}
+            >
+              <Ionicons name="arrow-back-circle" size={22} color="#FFF" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.backToAdminText}>Return to Admin Account</Text>
+                <Text style={styles.backToAdminSubtext}>Currently viewing as {user?.name}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#FFF" />
+            </Pressable>
+          </>
         )}
 
         {/* Account Settings */}
@@ -239,7 +321,17 @@ export default function ProfileScreen() {
 
           <Pressable
             style={[styles.settingRow, { backgroundColor: theme.surface, borderColor: theme.border }]}
-            onPress={() => setShowPinModal(true)}
+            onPress={() => {
+              if (user?.isViewOnly) {
+                Toast.show({
+                  type: 'info',
+                  text1: 'View-Only Mode',
+                  text2: 'You cannot change PIN in view-only mode',
+                });
+                return;
+              }
+              setShowPinModal(true);
+            }}
           >
             <View style={[styles.iconBox, { backgroundColor: theme.primary + '15' }]}>
               <Ionicons name="key-outline" size={22} color={theme.primary} />
@@ -248,7 +340,11 @@ export default function ProfileScreen() {
               <Text style={[styles.settingLabel, { color: theme.text }]}>Change PIN</Text>
               <Text style={[styles.settingDesc, { color: theme.subtext }]}>Update your 4-digit access code</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
+            {user?.isViewOnly ? (
+              <Ionicons name="lock-closed" size={20} color={theme.subtext} />
+            ) : (
+              <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
+            )}
           </Pressable>
 
           {role === 'admin' && (
@@ -302,6 +398,17 @@ export default function ProfileScreen() {
           <Ionicons name="log-out-outline" size={22} color="#FF4444" />
           <Text style={styles.logoutText}>Logout from Store</Text>
         </Pressable>
+
+        {/* Delete Account Button */}
+        {role === 'staff' && !isImpersonating && (
+          <Pressable 
+            style={[styles.deleteBtn, { borderColor: '#FF3B30', backgroundColor: '#FF3B30' + '10' }]} 
+            onPress={() => setShowDeleteModal(true)}
+          >
+            <Ionicons name="trash-outline" size={22} color="#FF3B30" />
+            <Text style={[styles.deleteText, { color: '#FF3B30' }]}>Delete Account Permanently</Text>
+          </Pressable>
+        )}
 
         <View style={{ height: 50 }} />
       </ScrollView>
@@ -383,8 +490,59 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Delete Account Modal */}
+      <Modal visible={showDeleteModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+            <View style={[styles.modalIconBox, { backgroundColor: '#FF3B30' + '15' }]}>
+              <Ionicons name="warning" size={32} color="#FF3B30" />
+            </View>
+
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Delete Account?</Text>
+            <Text style={[styles.modalDesc, { color: theme.subtext }]}>
+              This action cannot be undone. Your account and all associated data will be permanently deleted.
+            </Text>
+
+            <TextInput
+              style={[
+                styles.pinInput,
+                { color: theme.text, borderColor: '#FF3B30', backgroundColor: theme.background },
+              ]}
+              placeholder="Enter your PIN to confirm"
+              placeholderTextColor={theme.subtext}
+              secureTextEntry
+              keyboardType="numeric"
+              maxLength={4}
+              value={deletePin}
+              onChangeText={setDeletePin}
+            />
+
+            <View style={styles.modalActions}>
+              <Pressable
+                style={[
+                  styles.modalBtn,
+                  { backgroundColor: theme.background, borderWidth: 1, borderColor: theme.border },
+                ]}
+                onPress={() => {
+                  setShowDeleteModal(false);
+                  setDeletePin('');
+                }}
+              >
+                <Text style={{ color: theme.text, fontWeight: '600' }}>Cancel</Text>
+              </Pressable>
+              <Pressable 
+                style={[styles.modalBtn, { backgroundColor: '#FF3B30' }]} 
+                onPress={handleDeleteAccount}
+              >
+                <Text style={{ color: '#FFF', fontWeight: '700' }}>Delete Forever</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
-    </ImageBackground>
+    </View>
   );
 }
 
@@ -431,6 +589,27 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     marginBottom: 30,
+  },
+  viewOnlyBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 18,
+    borderRadius: 20,
+    borderWidth: 2,
+    marginBottom: 16,
+    gap: 12,
+  },
+  viewOnlyTitle: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  viewOnlyText: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 12,
+    fontWeight: '600',
   },
   backToAdminBtn: {
     flexDirection: 'row',
@@ -544,6 +723,20 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: '#FF4444',
+    fontWeight: '900',
+    fontSize: 14,
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 2,
+    marginTop: 12,
+  },
+  deleteText: {
     fontWeight: '900',
     fontSize: 14,
   },

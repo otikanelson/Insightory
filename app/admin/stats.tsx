@@ -7,7 +7,6 @@ import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Dimensions,
-    ImageBackground,
     Platform,
     Pressable,
     RefreshControl,
@@ -17,10 +16,12 @@ import {
     View
 } from "react-native";
 import Toast from "react-native-toast-message";
+import { DisabledFeatureOverlay } from "../../components/DisabledFeatureOverlay";
 import { HelpTooltip } from "../../components/HelpTooltip";
 import { useTheme } from "../../context/ThemeContext";
 import { useAIPredictions } from "../../hooks/useAIPredictions";
 import { useAnalytics } from "../../hooks/useAnalytics";
+import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 
 const { width } = Dimensions.get("window");
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api';
@@ -28,12 +29,25 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api';
 export default function AdminStats() {
   const { theme, isDark } = useTheme();
 
-  const backgroundImage = isDark
-    ? require("../../assets/images/Background7.png")
-    : require("../../assets/images/Background9.png");
   const router = useRouter();
   const { dashboardData, loading, refresh } = useAnalytics();
   const { quickInsights } = useAIPredictions({ enableWebSocket: true, autoFetch: true });
+  
+  // Check feature access for viewing analytics
+  const viewAccess = useFeatureAccess('viewAnalytics');
+  const exportAccess = useFeatureAccess('exportData');
+  
+  // Show overlay if access is denied
+  if (!viewAccess.isAllowed) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <DisabledFeatureOverlay 
+          reason={viewAccess.reason || 'Access denied'} 
+          isViewOnly={viewAccess.isViewOnly}
+        />
+      </View>
+    );
+  }
   
   const [selectedPeriod, setSelectedPeriod] = useState<"7" | "30">("30");
   const [selectedTab, setSelectedTab] = useState<"overview" | "products" | "categories" | "accuracy">("overview");
@@ -802,19 +816,12 @@ export default function AdminStats() {
   );
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={{ flex: 1, backgroundColor: "transparent" }}>
-      
-
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={loading}
-            onRefresh={refresh}
-            tintColor={theme.primary}
-          />
+          <RefreshControl refreshing={loading} onRefresh={refresh} tintColor={theme.primary} />
         }
       >
         {/* Header with Export Buttons */}
@@ -822,10 +829,10 @@ export default function AdminStats() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View>
               <Text style={[styles.headerSub, { color: theme.primary }]}>
-                AI_ANALYTICS
+                AI ANALYTICS
               </Text>
               <Text style={[styles.headerTitle, { color: theme.text }]}>
-                INSIGHTS
+                Insights
               </Text>
             </View>
             <HelpTooltip
@@ -847,13 +854,37 @@ export default function AdminStats() {
           {/* Export Buttons */}
           <View style={styles.exportButtons}>
             <Pressable
-              onPress={handleExportCSV}
+              onPress={() => {
+                if (!exportAccess.isAllowed) {
+                  Toast.show({
+                    type: exportAccess.isViewOnly ? 'info' : 'error',
+                    text1: exportAccess.isViewOnly ? 'View-Only Mode' : 'Access Denied',
+                    text2: exportAccess.reason,
+                    visibilityTime: 3000,
+                  });
+                  return;
+                }
+                handleExportCSV();
+              }}
               disabled={exportingCSV || exportingPDF}
               style={[
                 styles.exportBtn,
-                { backgroundColor: theme.surface, borderColor: theme.border },
+                { 
+                  backgroundColor: theme.surface, 
+                  borderColor: theme.border,
+                  opacity: !exportAccess.isAllowed ? 0.5 : 1
+                },
               ]}
             >
+              {!exportAccess.isAllowed && (
+                <View style={styles.lockBadge}>
+                  <Ionicons 
+                    name={exportAccess.isViewOnly ? 'eye-off' : 'lock-closed'} 
+                    size={10} 
+                    color="#FFF" 
+                  />
+                </View>
+              )}
               {exportingCSV ? (
                 <ActivityIndicator size="small" color={theme.primary} />
               ) : (
@@ -861,13 +892,37 @@ export default function AdminStats() {
               )}
             </Pressable>
             <Pressable
-              onPress={handleExportPDF}
+              onPress={() => {
+                if (!exportAccess.isAllowed) {
+                  Toast.show({
+                    type: exportAccess.isViewOnly ? 'info' : 'error',
+                    text1: exportAccess.isViewOnly ? 'View-Only Mode' : 'Access Denied',
+                    text2: exportAccess.reason,
+                    visibilityTime: 3000,
+                  });
+                  return;
+                }
+                handleExportPDF();
+              }}
               disabled={exportingCSV || exportingPDF}
               style={[
                 styles.exportBtn,
-                { backgroundColor: theme.surface, borderColor: theme.border },
+                { 
+                  backgroundColor: theme.surface, 
+                  borderColor: theme.border,
+                  opacity: !exportAccess.isAllowed ? 0.5 : 1
+                },
               ]}
             >
+              {!exportAccess.isAllowed && (
+                <View style={styles.lockBadge}>
+                  <Ionicons 
+                    name={exportAccess.isViewOnly ? 'eye-off' : 'lock-closed'} 
+                    size={10} 
+                    color="#FFF" 
+                  />
+                </View>
+              )}
               {exportingPDF ? (
                 <ActivityIndicator size="small" color={theme.primary} />
               ) : (
@@ -1026,16 +1081,15 @@ export default function AdminStats() {
         {renderTabContent()}
       </ScrollView>
     </View>
-    </ImageBackground>
   );
 }
 
 // Helper function to get risk color
 const getRiskColor = (score: number) => {
-  if (score >= 70) return "#FF4444";
-  if (score >= 50) return "#FF9500";
-  if (score >= 30) return "#FFCC00";
-  return "#34C759";
+  if (score >= 70) return "#EF4444";
+  if (score >= 50) return "#F59E0B";
+  if (score >= 30) return "#EAB308";
+  return "#10B981";
 };
 
 const styles = StyleSheet.create({
@@ -1059,6 +1113,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
+    position: 'relative',
+  },
+  lockBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FF3B30',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    borderWidth: 2,
+    borderColor: '#FFF',
   },
   periodSelector: {
     flexDirection: "row",

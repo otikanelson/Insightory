@@ -4,28 +4,40 @@ import { useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     FlatList,
-    ImageBackground,
     Pressable,
     RefreshControl,
     StyleSheet,
     Text,
     View
 } from "react-native";
+import { DisabledFeatureOverlay } from "../../components/DisabledFeatureOverlay";
 import { HelpTooltip } from "../../components/HelpTooltip";
 import { useTheme } from "../../context/ThemeContext";
 import { useAIPredictions } from "../../hooks/useAIPredictions";
+import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 import { useProducts } from "../../hooks/useProducts";
 import { Prediction } from "../../types/ai-predictions";
 
 export default function FEFOScreen() {
   const { theme, isDark } = useTheme();
-
-  const backgroundImage = isDark
-    ? require("../../assets/images/Background7.png")
-    : require("../../assets/images/Background9.png");
   const { products, loading, refresh } = useProducts();
   const { fetchBatchPredictions } = useAIPredictions({ enableWebSocket: false, autoFetch: false });
   const router = useRouter();
+  
+  // Check feature access
+  const viewAccess = useFeatureAccess('viewInventory');
+  
+  // Show overlay if access is denied
+  if (!viewAccess.isAllowed) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <DisabledFeatureOverlay 
+          reason={viewAccess.reason || 'Access denied'} 
+          isViewOnly={viewAccess.isViewOnly}
+        />
+      </View>
+    );
+  }
 
   // State to toggle view mode and sort mode
   const [viewByProduct, setViewByProduct] = useState(false);
@@ -168,8 +180,8 @@ export default function FEFOScreen() {
   };
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={{ flex: 1, backgroundColor: "transparent" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
       
 
       <FlatList
@@ -394,7 +406,7 @@ export default function FEFOScreen() {
         }
       />
     </View>
-    </ImageBackground>
+    </View>
   );
 }
 

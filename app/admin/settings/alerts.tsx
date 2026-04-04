@@ -3,32 +3,31 @@ import axios from 'axios';
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ImageBackground,
-  Modal,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View
+    Modal,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    View
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { HelpTooltip } from "../../../components/HelpTooltip";
 import { useTheme } from "../../../context/ThemeContext";
 import { useAlerts } from "../../../hooks/useAlerts";
+import { useFeatureAccess } from "../../../hooks/useFeatureAccess";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 export default function AlertSettingsScreen() {
   const { theme, isDark } = useTheme();
-
-  const backgroundImage = isDark
-    ? require("../../../assets/images/Background7.png")
-    : require("../../../assets/images/Background9.png");
   const router = useRouter();
   const { settings: alertSettings, updateSettings } = useAlerts();
+  
+  // Check feature access for managing categories
+  const categoryAccess = useFeatureAccess('manageCategories');
 
   // Alert Threshold State
   const [thresholds, setThresholds] = useState({
@@ -503,8 +502,8 @@ export default function AlertSettingsScreen() {
   };
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={{ flex: 1, backgroundColor: "transparent" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
       
 
       <ScrollView 
@@ -703,13 +702,17 @@ export default function AlertSettingsScreen() {
                 color={theme.primary} 
               />
             </View>
-            <Pressable
-              style={[styles.addCategoryBtn, { backgroundColor: theme.primary }]}
+            <DisabledButton
               onPress={openCreateCategoryModal}
+              disabled={!categoryAccess.isAllowed}
+              disabledReason={categoryAccess.reason}
+              isViewOnly={categoryAccess.isViewOnly}
+              style={[styles.addCategoryBtn, { backgroundColor: theme.primary }]}
+              textStyle={{ color: '#FFF' }}
             >
               <Ionicons name="add" size={20} color="#FFF" />
               <Text style={styles.addCategoryText}>NEW</Text>
-            </Pressable>
+            </DisabledButton>
           </Pressable>
 
           {categoriesExpanded && (
@@ -1060,7 +1063,7 @@ export default function AlertSettingsScreen() {
         </View>
       </Modal>
     </View>
-    </ImageBackground>
+    </View>
   );
 }
 

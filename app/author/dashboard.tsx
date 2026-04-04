@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  ImageBackground,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -32,10 +31,7 @@ interface Store {
 export default function AuthorDashboard() {
   const { theme, isDark } = useTheme();
 
-  const backgroundImage = isDark
-    ? require("../../assets/images/Background7.png")
-    : require("../../assets/images/Background9.png");
-  const router = useRouter();
+    const router = useRouter();
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -150,8 +146,8 @@ export default function AuthorDashboard() {
   }
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={[styles.container, { backgroundColor: "transparent" }]}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
         <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -313,7 +309,7 @@ export default function AuthorDashboard() {
         <View style={{ height: 100 }} />
       </ScrollView>
     </View>
-    </ImageBackground>
+    </View>
   );
 }
 

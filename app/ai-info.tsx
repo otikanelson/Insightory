@@ -3,7 +3,6 @@ import axios from 'axios';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ImageBackground,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -17,10 +16,7 @@ export default function AIInfoScreen() {
   const router = useRouter();
   const { theme, isDark } = useTheme();
 
-  const backgroundImage = isDark
-    ? require("../assets/images/Background7.png")
-    : require("../assets/images/Background9.png");
-  const [aiStatus, setAiStatus] = useState<any>(null);
+    const [aiStatus, setAiStatus] = useState<any>(null);
 
   useEffect(() => {
     fetchAIStatus();
@@ -40,8 +36,8 @@ export default function AIInfoScreen() {
   };
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={[styles.container, { backgroundColor: "transparent" }]}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
         {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.surface }]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
@@ -234,7 +230,7 @@ export default function AIInfoScreen() {
         </View>
       </ScrollView>
     </View>
-    </ImageBackground>
+    </View>
   );
 }
 

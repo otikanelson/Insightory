@@ -5,17 +5,16 @@ import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Dimensions,
-  Image,
-  ImageBackground,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
+    ActivityIndicator,
+    Dimensions,
+    Image,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { useTheme } from "../../../context/ThemeContext";
@@ -75,9 +74,10 @@ export default function AdminProductDetails() {
   const router = useRouter();
   const { theme, isDark } = useTheme();
 
-  const backgroundImage = isDark
-    ? require("../../../assets/images/Background7.png")
-    : require("../../../assets/images/Background9.png");
+  // Check feature access for edit and delete
+  const editAccess = useFeatureAccess('editProducts');
+  const deleteAccess = useFeatureAccess('deleteProducts');
+  
   const { getProductById, refresh } = useProducts();
   const { prediction, loading: predictionLoading } = useAIPredictions({ 
     productId: id as string,
@@ -496,8 +496,8 @@ export default function AdminProductDetails() {
   }
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={{ flex: 1, backgroundColor: "transparent" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
       
 
       <ScrollView
@@ -516,18 +516,24 @@ export default function AdminProductDetails() {
           <View style={styles.headerActions}>
             {!isEditing ? (
               <>
-                <Pressable
+                <DisabledButton
                   onPress={() => setIsEditing(true)}
+                  disabled={!editAccess.isAllowed}
+                  disabledReason={editAccess.reason}
+                  isViewOnly={editAccess.isViewOnly}
                   style={[styles.headerBtn, { backgroundColor: theme.primary }]}
                 >
                   <Ionicons name="create-outline" size={20} color="#FFF" />
-                </Pressable>
-                <Pressable
+                </DisabledButton>
+                <DisabledButton
                   onPress={() => setShowDeleteWarning(true)}
+                  disabled={!deleteAccess.isAllowed}
+                  disabledReason={deleteAccess.reason}
+                  isViewOnly={deleteAccess.isViewOnly}
                   style={[styles.headerBtn, { backgroundColor: "#FF3B30" }]}
                 >
                   <Ionicons name="trash-outline" size={20} color="#FFF" />
-                </Pressable>
+                </DisabledButton>
               </>
             ) : (
               <>
@@ -664,11 +670,14 @@ export default function AdminProductDetails() {
           </View>
 
           <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
-            <Pressable
+            <DisabledButton
               onPress={() => {
                 setTempPrice(editedGenericPrice);
                 setShowPriceModal(true);
               }}
+              disabled={!editAccess.isAllowed}
+              disabledReason={editAccess.reason}
+              isViewOnly={editAccess.isViewOnly}
               style={styles.statPressable}
             >
               <Text style={[styles.statValue, { color: theme.primary }]}>
@@ -678,7 +687,7 @@ export default function AdminProductDetails() {
                 Generic Price
               </Text>
               <Ionicons name="create-outline" size={12} color={theme.primary} style={styles.editIcon} />
-            </Pressable>
+            </DisabledButton>
           </View>
         </View>
 
@@ -1224,7 +1233,7 @@ export default function AdminProductDetails() {
         </View>
       </Modal>
     </View>
-    </ImageBackground>
+    </View>
   );
 }
 

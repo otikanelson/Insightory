@@ -91,56 +91,21 @@ exports.getStore = async (req, res) => {
   }
 };
 
-// Get all stores (author only)
+// Get all stores (public - for staff registration)
 exports.getAllStores = async (req, res) => {
   try {
-    // Verify author role
-    if (!req.user || !req.user.isAuthor) {
-      return res.status(403).json({
-        success: false,
-        error: 'Access denied'
-      });
-    }
-
     const stores = await Store.find({ isActive: true })
-      .populate('ownerId', 'name')
-      .sort({ createdAt: -1 });
+      .select('_id name')
+      .sort({ name: 1 });
 
-    // Get counts for each store
-    const storesWithCounts = await Promise.all(
-      stores.map(async (store) => {
-        const adminCount = await User.countDocuments({ 
-          storeId: store._id, 
-          role: 'admin',
-          isActive: true 
-        });
-        
-        const staffCount = await User.countDocuments({ 
-          storeId: store._id, 
-          role: 'staff',
-          isActive: true 
-        });
-        
-        const productCount = await Product.countDocuments({ 
-          storeId: store._id 
-        });
-
-        return {
-          id: store._id,
-          name: store.name,
-          ownerId: store.ownerId?._id,
-          ownerName: store.ownerId?.name,
-          adminCount,
-          staffCount,
-          productCount,
-          createdAt: store.createdAt
-        };
-      })
-    );
+    const formattedStores = stores.map(store => ({
+      id: store._id,
+      name: store.name
+    }));
 
     res.json({
       success: true,
-      data: storesWithCounts
+      data: formattedStores
     });
   } catch (error) {
     console.error('Get all stores error:', error);
@@ -226,3 +191,64 @@ exports.getStoreDetails = async (req, res) => {
 };
 
 module.exports = exports;
+
+
+// Get all stores with details (author only)
+exports.getAllStoresDetailed = async (req, res) => {
+  try {
+    // Verify author role
+    if (!req.user || !req.user.isAuthor) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
+      });
+    }
+
+    const stores = await Store.find({ isActive: true })
+      .populate('ownerId', 'name')
+      .sort({ createdAt: -1 });
+
+    // Get counts for each store
+    const storesWithCounts = await Promise.all(
+      stores.map(async (store) => {
+        const adminCount = await User.countDocuments({ 
+          storeId: store._id, 
+          role: 'admin',
+          isActive: true 
+        });
+        
+        const staffCount = await User.countDocuments({ 
+          storeId: store._id, 
+          role: 'staff',
+          isActive: true 
+        });
+        
+        const productCount = await Product.countDocuments({ 
+          storeId: store._id 
+        });
+
+        return {
+          id: store._id,
+          name: store.name,
+          ownerId: store.ownerId?._id,
+          ownerName: store.ownerId?.name,
+          adminCount,
+          staffCount,
+          productCount,
+          createdAt: store.createdAt
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      data: storesWithCounts
+    });
+  } catch (error) {
+    console.error('Get all stores detailed error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch stores'
+    });
+  }
+};

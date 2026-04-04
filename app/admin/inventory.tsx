@@ -4,15 +4,14 @@ import axios from "axios";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  FlatList,
-  Image,
-  ImageBackground,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
+    FlatList,
+    Image,
+    Pressable,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { HelpTooltip } from "../../components/HelpTooltip";
@@ -23,10 +22,7 @@ export default function AdminInventory() {
   const router = useRouter();
   const { theme, isDark } = useTheme();
 
-  const backgroundImage = isDark
-    ? require("../../assets/images/Background7.png")
-    : require("../../assets/images/Background9.png");
-  const { products, loading, refresh } = useProducts();
+    const { products, loading, refresh } = useProducts();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<"name" | "totalQuantity" | "risk" | "velocity">("name");
@@ -204,16 +200,16 @@ export default function AdminInventory() {
   };
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={{ flex: 1, backgroundColor: "transparent" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
         <View style={styles.container}>
         <View style={styles.topSection}>
           <Text style={[styles.subtitle, { color: theme.primary }]}>
-            ADMIN_PANEL
+            ADMIN PANEL
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={[styles.title, { color: theme.text }]}>
-              INVENTORY
+              Inventory
             </Text>
             <HelpTooltip
               style={{marginBottom: 20}}
@@ -716,7 +712,7 @@ export default function AdminInventory() {
         />
       </View>
     </View>
-    </ImageBackground>
+    </View>
   );
 }
 

@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-    ImageBackground,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -11,16 +10,13 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { AIStatusIndicator } from "../components/AIStatusIndicator";
-import { margin, touchTarget } from "../constants/spacing";
+import { margin } from "../constants/spacing";
 import { useTheme } from "../context/ThemeContext";
 import { useTour } from "../context/TourContext";
 
 export default function SettingsScreen() {
   const { theme, isDark, toggleTheme } = useTheme();
-  const backgroundImage = isDark
-    ? require("../assets/images/Background7.png")
-    : require("../assets/images/Background9.png");
-  const router = useRouter();
+    const router = useRouter();
   const { resetTour, startTour } = useTour();
 
   const SettingRow = ({ icon, label, children, description, onPress, style }: any) => {
@@ -59,8 +55,8 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={{ flex: 1, backgroundColor: "transparent" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
       
 
       <ScrollView
@@ -151,6 +147,22 @@ export default function SettingsScreen() {
         </SettingRow>
       </View>
 
+      {/* DANGER ZONE */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: '#FF3B30' }]}>
+          DANGER ZONE
+        </Text>
+        <SettingRow
+          icon="trash-outline"
+          label="Delete Account"
+          description="Permanently delete your account and data"
+          onPress={() => router.push('/profile?showDeleteModal=true' as any)}
+          style={{ borderBottomWidth: 0 }}
+        >
+          <Ionicons name="chevron-forward" size={20} color="#FF3B30" />
+        </SettingRow>
+      </View>
+
       <View style={{ height: 10 }} />
 
         <Text style={styles.versionText}>
@@ -158,63 +170,65 @@ export default function SettingsScreen() {
         </Text>
       </ScrollView>
     </View>
-    </ImageBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 20 },
   header: { marginTop: 70, marginBottom: margin.section },
-  headerSub: { fontSize: 10, fontWeight: "900", letterSpacing: 2 },
-  headerTitle: { fontSize: 25, fontWeight: "900", letterSpacing: -1 },
+  headerSub: { fontSize: 11, fontWeight: "900", letterSpacing: 2, opacity: 0.7 },
+  headerTitle: { fontSize: 32, fontWeight: "900", letterSpacing: -0.5, marginTop: 4 },
   section: { marginBottom: margin.section },
   sectionTitle: {
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 1.5,
-    marginBottom: margin.formField,
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 2,
+    marginBottom: 16,
+    opacity: 0.6,
   },
   settingRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 16,
+    paddingVertical: 18,
     borderBottomWidth: 1,
   },
   settingMain: { flexDirection: "row", alignItems: "center", flex: 1 },
   iconBox: {
-    width: touchTarget.minWidth,
-    height: touchTarget.minHeight,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 15,
+    marginRight: 16,
   },
   textStack: { flex: 1 },
-  settingLabel: { fontSize: 16, fontWeight: "600" },
-  settingDesc: { fontSize: 12, marginTop: 2 },
+  settingLabel: { fontSize: 17, fontWeight: "700", marginBottom: 2 },
+  settingDesc: { fontSize: 13, marginTop: 2, opacity: 0.7 },
   badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
   },
   badgeText: {
-    fontSize: 10,
-    fontWeight: "800",
+    fontSize: 11,
+    fontWeight: "900",
     letterSpacing: 0.5,
   },
   adminBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
   },
   versionText: {
     textAlign: "center",
     color: "#888",
-    fontSize: 10,
+    fontSize: 11,
     marginBottom: 100,
     letterSpacing: 1,
+    opacity: 0.5,
   },
 });

@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-    ImageBackground,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -12,7 +11,7 @@ import {
 import Toast from "react-native-toast-message";
 import { AIStatusIndicator } from "../../components/AIStatusIndicator";
 import { HelpTooltip } from "../../components/HelpTooltip";
-import { margin, touchTarget } from "../../constants/spacing";
+import { margin } from "../../constants/spacing";
 import { useAdminTour } from "../../context/AdminTourContext";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -21,13 +20,7 @@ export default function AdminSettingsScreen() {
   const router = useRouter();
   const { resetTour, startTour } = useAdminTour();
 
-  const backgroundImage = isDark
-    ? require("../../assets/images/Background7.png")
-    : require("../../assets/images/Background9.png");
-
-
-
-  const SettingRow = ({ icon, label, description, onPress, children }: any) => {
+    const SettingRow = ({ icon, label, description, onPress, children }: any) => {
     const row = (
       <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
         <View style={styles.settingMain}>
@@ -61,8 +54,8 @@ export default function AdminSettingsScreen() {
   };
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={{ flex: 1, backgroundColor: "transparent" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
       
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -204,6 +197,22 @@ export default function AdminSettingsScreen() {
 
         </View>
 
+        {/* DANGER ZONE */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: '#FF3B30' }]}>
+            DANGER ZONE
+          </Text>
+          <SettingRow
+            icon="trash-outline"
+            label="Delete Account"
+            description="Permanently delete your account, store, and all data"
+            onPress={() => router.push('/admin/settings/profile?showDeleteModal=true' as any)}
+            style={{ borderBottomWidth: 0 }}
+          >
+            <Ionicons name="chevron-forward" size={20} color="#FF3B30" />
+          </SettingRow>
+        </View>
+
         <View style={{ height: 10 }} />
 
         <Text style={styles.versionText}>
@@ -212,46 +221,48 @@ export default function AdminSettingsScreen() {
 
       </ScrollView>
     </View>
-    </ImageBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 20 },
   header: { marginTop: 70, marginBottom: margin.section },
-  headerSub: { fontSize: 10, fontWeight: "900", letterSpacing: 2 },
-  headerTitle: { fontSize: 25, fontWeight: "900", letterSpacing: -1 },
+  headerSub: { fontSize: 11, fontWeight: "900", letterSpacing: 2, opacity: 0.7 },
+  headerTitle: { fontSize: 32, fontWeight: "900", letterSpacing: -0.5, marginTop: 4 },
   section: { marginBottom: margin.section },
   sectionTitle: {
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 1.5,
-    marginBottom: margin.formField,
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 2,
+    marginBottom: 16,
+    opacity: 0.6,
   },
   settingRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 16,
+    paddingVertical: 18,
     borderBottomWidth: 1,
   },
   settingMain: { flexDirection: "row", alignItems: "center", flex: 1 },
   iconBox: {
-    width: touchTarget.minWidth,
-    height: touchTarget.minHeight,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 15,
+    marginRight: 16,
   },
   textStack: { flex: 1 },
-  settingLabel: { fontSize: 16, fontWeight: "600" },
-  settingDesc: { fontSize: 12, marginTop: 2 },
+  settingLabel: { fontSize: 17, fontWeight: "700", marginBottom: 2 },
+  settingDesc: { fontSize: 13, marginTop: 2, opacity: 0.7 },
   versionText: {
     textAlign: "center",
     color: "#888",
-    fontSize: 10,
+    fontSize: 11,
     marginBottom: 100,
     letterSpacing: 1,
+    opacity: 0.5,
   },
 });

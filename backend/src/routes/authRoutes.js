@@ -29,11 +29,12 @@ router.get('/admin-info/:storeId', authController.getAdminInfo);
 // Check if admin has security PIN set (used by staff before registering products)
 router.get('/check-admin-security-pin/:storeId', authController.checkAdminSecurityPin);
 
-// Protected routes (authentication required)
 // Staff management
 router.post('/staff', authenticate, tenantFilter, authController.createStaff);
+router.post('/staff/join', authController.joinStore); // Public - staff joining existing store
 router.get('/staff', authenticate, tenantFilter, authController.getStaff);
 router.put('/staff/:id', authenticate, tenantFilter, authController.updateStaff);
+router.patch('/staff/:id/permissions', authenticate, tenantFilter, authController.updateStaffPermissions);
 router.delete('/staff/:id', authenticate, tenantFilter, authController.deleteStaff);
 
 // Admin impersonate staff
@@ -41,5 +42,9 @@ router.post('/staff/:staffId/impersonate', authenticate, tenantFilter, authContr
 
 // Update admin PIN
 router.put('/admin/pin', authenticate, authController.updateAdminPin);
+
+// Delete accounts
+router.delete('/admin/account', authenticate, authController.deleteAdminAccount);
+router.delete('/staff/account', authenticate, authController.deleteStaffAccount);
 
 module.exports = router;

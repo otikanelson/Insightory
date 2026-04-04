@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { lineHeight } from '../constants/spacing';
 import { useTheme } from '../context/ThemeContext';
@@ -41,14 +41,14 @@ interface HelpTooltipProps {
   style?: object;
 }
 
-export const HelpTooltip: React.FC<HelpTooltipProps> = ({
+export const HelpTooltip = ({
   title,
   content,
   icon = 'help-circle-outline',
   iconSize = 20,
   iconColor,
   style,
-}) => {
+}: HelpTooltipProps): JSX.Element => {
   const { theme } = useTheme();
   const [showModal, setShowModal] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);

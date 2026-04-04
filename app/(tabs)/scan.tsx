@@ -1,4 +1,5 @@
 import AdminSecurityPINWarning from "@/components/AdminSecurityPINWarning";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { HelpTooltip } from "@/components/HelpTooltip";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -9,6 +10,7 @@ import * as Haptics from "expo-haptics";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+    ActivityIndicator,
     Animated,
     Modal,
     Pressable,
@@ -22,12 +24,17 @@ import { useTheme } from "../../context/ThemeContext";
 import { hasSecurityPIN } from "../../utils/securityPINCheck";
 
 export default function ScanScreen() {
+  console.log('🎬 [SCAN] Component mounting...');
   const router = useRouter();
   const { initialTab } = useLocalSearchParams();
   const { theme } = useTheme();
 
+  // Check feature access for scanning
+  const scanAccess = useFeatureAccess('scanBarcodes');
+
   // Camera permissions
   const [permission, requestPermission] = useCameraPermissions();
+  console.log('📷 [SCAN] Camera permission state:', permission?.granted);
 
   // Tab State
   const [tab, setTab] = useState<"lookup" | "registry">(
@@ -44,8 +51,11 @@ export default function ScanScreen() {
   const [pendingData, setPendingData] = useState<any>(null);
   const [adminPin, setAdminPin] = useState("");
   const [rapidScanEnabled, setRapidScanEnabled] = useState(false);
+
   const [securityPINWarningVisible, setSecurityPINWarningVisible] = useState(false);
   const [checkingSecurityPIN, setCheckingSecurityPIN] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
+  const [cameraError, setCameraError] = useState(false);
 
   // CRITICAL: Key to force camera remount when screen focuses
   const [cameraKey, setCameraKey] = useState(0);
@@ -58,12 +68,19 @@ export default function ScanScreen() {
 
   // Load rapid scan setting
   useEffect(() => {
-    loadRapidScanSetting();
+    console.log('⚙️ [SCAN] Loading rapid scan setting...');
+    loadRapidScanSetting().catch(err => {
+      console.error('❌ [SCAN] Failed to load rapid scan setting:', err);
+    });
   }, []);
 
   // Check security PIN on mount
   useEffect(() => {
-    checkSecurityPIN();
+    console.log('🔐 [SCAN] Checking security PIN on mount...');
+    checkSecurityPIN().catch(err => {
+      console.error('❌ [SCAN] Failed to check security PIN:', err);
+      setCheckingSecurityPIN(false);
+    });
   }, []);
 
   const checkSecurityPIN = async () => {
@@ -94,37 +111,61 @@ export default function ScanScreen() {
   const scanAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(scanAnim, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scanAnim, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
+    console.log('🎬 [SCAN] Starting scan animation...');
+    try {
+      const animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(scanAnim, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scanAnim, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      animation.start();
+      
+      return () => {
+        console.log('🛑 [SCAN] Stopping scan animation...');
+        animation.stop();
+      };
+    } catch (err) {
+      console.error('❌ [SCAN] Animation error:', err);
+    }
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
-      // Reset all state when returning to scanner
-      setScanned(false);
-      setLoading(false);
-      setConfirmModal(false);
-      setPinModal(false);
-      setPendingData(null);
-      setAdminPin("");
-      setTorch(false);
+      console.log('👁️ [SCAN] Screen focused - resetting state...');
+      try {
+        setIsMounted(true);
+        setCameraError(false);
+        // Reset all state when returning to scanner
+        setScanned(false);
+        setLoading(false);
+        setConfirmModal(false);
+        setPinModal(false);
+        setPendingData(null);
+        setAdminPin("");
+        setTorch(false);
 
-      // Force camera remount by changing key
-      setCameraKey((prev) => prev + 1);
+        // Force camera remount by changing key
+        setCameraKey((prev) => {
+          const newKey = prev + 1;
+          console.log('🔑 [SCAN] Camera key updated:', prev, '->', newKey);
+          return newKey;
+        });
+      } catch (err) {
+        console.error('❌ [SCAN] Error during focus effect:', err);
+      }
 
       return () => {
+        console.log('🧹 [SCAN] Screen unfocused - cleanup...');
+        setIsMounted(false);
         // Cleanup on unmount
         setTorch(false);
       };
@@ -133,27 +174,35 @@ export default function ScanScreen() {
 
   // Additional safety: Reset when tab changes
   React.useEffect(() => {
+    console.log('🔄 [SCAN] Tab changed to:', tab);
     setScanned(false);
     setLoading(false);
   }, [tab]);
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    if (scanned || loading) return;
+    console.log('📸 [SCAN] Barcode scanned:', data);
+    if (scanned || loading) {
+      console.log('⏭️ [SCAN] Scan ignored - already processing');
+      return;
+    }
     setScanned(true);
     setLoading(true);
 
-        // Add delay to allow camera to focus properly
-      await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+    // Add delay to allow camera to focus properly
+    await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
     try {
       let response;
       try {
+        console.log('🌐 [SCAN] Fetching registry data for barcode:', data);
         response = await axios.get(
           `${process.env.EXPO_PUBLIC_API_URL}/products/registry/lookup/${data}`,
           { timeout: 3000 }
         );
+        console.log('✅ [SCAN] Registry response:', response.data.found ? 'FOUND' : 'NOT FOUND');
       } catch (apiError: any) {
         // Network error - show offline message
-        console.log('Registry lookup failed, app is offline');
+        console.error('❌ [SCAN] Registry lookup failed:', apiError.message);
+        console.log('📡 [SCAN] App is offline');
         RegPlayer.play();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         Toast.show({
@@ -169,7 +218,9 @@ export default function ScanScreen() {
 
       // LOOKUP MODE: Navigate to existing product
       if (tab === "lookup") {
+        console.log('🔍 [SCAN] LOOKUP mode processing...');
         if (response.data.found) {
+          console.log('✅ [SCAN] Product found in registry, checking local inventory...');
           // Product exists in registry - now find it in local inventory
           const localProductResponse = await axios.get(
             `${process.env.EXPO_PUBLIC_API_URL}/products/barcode/${data}`
@@ -177,6 +228,7 @@ export default function ScanScreen() {
           
           if (localProductResponse.data.success && localProductResponse.data.product) {
             // Product found in local inventory
+            console.log('✅ [SCAN] Product found in local inventory, navigating...');
             BatchPlayer.play();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setScanned(false);
@@ -185,6 +237,7 @@ export default function ScanScreen() {
             router.replace(`/product/${localProductResponse.data.product._id}`);
           } else {
             // Product in registry but not in local stock
+            console.log('⚠️ [SCAN] Product in registry but not in local stock');
             RegPlayer.play();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             Toast.show({
@@ -196,6 +249,7 @@ export default function ScanScreen() {
           }
         } else {
           // Product not even in registry
+          console.log('❌ [SCAN] Product not found in registry');
           RegPlayer.play();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
           Toast.show({
@@ -210,6 +264,7 @@ export default function ScanScreen() {
 
       // REGISTRY MODE: Register or Add Batch
       if (response.data.found) {
+        console.log('✅ [SCAN] REGISTRY mode - product exists, preparing batch add...');
         // Product exists in registry - add batch
         BatchPlayer.play();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -227,6 +282,7 @@ export default function ScanScreen() {
         
         // RAPID SCAN MODE: Skip confirmation, go directly to add-products
         if (rapidScanEnabled) {
+          console.log('⚡ [SCAN] Rapid scan enabled - navigating directly...');
           setScanned(false);
           // Turn off torch before navigation
           setTorch(false);
@@ -240,11 +296,13 @@ export default function ScanScreen() {
           });
         } else {
           // Normal mode: Show confirmation
+          console.log('📋 [SCAN] Normal mode - showing confirmation...');
           setPendingData(dataToPass);
           setConfirmModal(true);
         }
       } else {
         // Product NOT in registry - need to register
+        console.log('⚠️ [SCAN] REGISTRY mode - new product, needs registration...');
         RegPlayer.play();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         setIsNewProduct(true);
@@ -255,10 +313,11 @@ export default function ScanScreen() {
         setConfirmModal(true);
       }
     } catch (err) {
-      console.error("Scan Error:", err);
+      console.error("❌ [SCAN] Scan Error:", err);
       Toast.show({ type: "error", text1: "Scan Failed", text2: "Please try again" });
       setScanned(false);
     } finally {
+      console.log('🏁 [SCAN] Scan processing complete');
       setLoading(false);
     }
   };
@@ -366,6 +425,7 @@ export default function ScanScreen() {
 
   // Handle camera permissions
   if (!permission) {
+    console.log('⏳ [SCAN] Permission object is null/undefined - waiting...');
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Text style={[styles.permissionText, { color: theme.text }]}>
@@ -376,6 +436,8 @@ export default function ScanScreen() {
   }
 
   if (!permission.granted) {
+    console.log('🚫 [SCAN] Camera permission not granted');
+
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <View style={styles.permissionContainer}>
@@ -396,8 +458,83 @@ export default function ScanScreen() {
 
   const tabColor = tab === "lookup" ? theme.primary : "#00FF00";
 
+  console.log('🎨 [SCAN] Rendering scanner - cameraKey:', cameraKey, 'tab:', tab, 'loading:', loading, 'isMounted:', isMounted);
+
+  // Block access if in view-only mode
+  if (isViewOnly) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.permissionContainer}>
+          <View style={[styles.viewOnlyBlock, { backgroundColor: '#FF9500' + '15', borderColor: '#FF9500' }]}>
+            <Ionicons name="eye-off" size={64} color="#FF9500" />
+            <Text style={[styles.viewOnlyTitle, { color: theme.text }]}>
+              Scanner Disabled
+            </Text>
+            <Text style={[styles.viewOnlyText, { color: theme.subtext }]}>
+              You are in view-only mode. Scanning is not available.
+            </Text>
+            <Pressable
+              style={[styles.goBackBtn, { backgroundColor: theme.primary }]}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="arrow-back" size={20} color="#FFF" />
+              <Text style={styles.goBackText}>Go Back</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // CRITICAL: Don't render camera until component is fully mounted and permission is granted
+  if (!isMounted || !permission?.granted) {
+    console.log('⏸️ [SCAN] Waiting for mount/permission - isMounted:', isMounted, 'granted:', permission?.granted);
+    return (
+      <ErrorBoundary>
+        <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.permissionText, { color: theme.text, marginTop: 20 }]}>
+            Initializing camera...
+          </Text>
+        </View>
+      </ErrorBoundary>
+    );
+  }
+
+  // Show error state if camera failed to mount
+  if (cameraError) {
+    console.log('💥 [SCAN] Camera error state - showing recovery UI');
+    return (
+      <ErrorBoundary>
+        <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center', padding: 20 }]}>
+          <Ionicons name="camera-off" size={64} color={theme.subtext} />
+          <Text style={[styles.permissionText, { color: theme.text, marginTop: 20, textAlign: 'center' }]}>
+            Camera failed to initialize
+          </Text>
+          <Pressable
+            style={[styles.permissionBtn, { backgroundColor: theme.primary, marginTop: 20 }]}
+            onPress={() => {
+              console.log('🔄 [SCAN] Retrying camera initialization...');
+              setCameraError(false);
+              setCameraKey(prev => prev + 1);
+            }}
+          >
+            <Text style={styles.permissionBtnText}>Retry</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.permissionBtn, { backgroundColor: '#444', marginTop: 10 }]}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.permissionBtnText}>Go Back</Text>
+          </Pressable>
+        </View>
+      </ErrorBoundary>
+    );
+  }
+
   return (
-    <View style={styles.container}>
+    <ErrorBoundary>
+      <View style={styles.container}>
       {/* CAMERA VIEW */}
       <CameraView
         key={cameraKey}
@@ -407,6 +544,16 @@ export default function ScanScreen() {
         onBarcodeScanned={loading ? undefined : handleBarCodeScanned}
         barcodeScannerSettings={{
           barcodeTypes: ["ean13", "upc_a", "code128", "qr"],
+        }}
+        onMountError={(error) => {
+          console.error('❌ [SCAN] Camera mount error:', error);
+          setCameraError(true);
+          Toast.show({
+            type: 'error',
+            text1: 'Camera Error',
+            text2: 'Failed to initialize camera. Please try again.',
+            visibilityTime: 5000,
+          });
         }}
       />
 
@@ -676,6 +823,7 @@ export default function ScanScreen() {
         onNavigateToSettings={handleNavigateToSettings}
       />
     </View>
+    </ErrorBoundary>
   );
 }
 
@@ -880,5 +1028,37 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 16,
     fontWeight: "700",
+  },
+  viewOnlyBlock: {
+    padding: 40,
+    borderRadius: 24,
+    borderWidth: 2,
+    alignItems: 'center',
+    width: '90%',
+  },
+  viewOnlyTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  viewOnlyText: {
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  goBackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+  },
+  goBackText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

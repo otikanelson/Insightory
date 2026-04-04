@@ -1,29 +1,45 @@
-// constants/Colors.ts
+// constants/Colors.ts — Modern redesign
 export const Colors = {
   light: {
-    background: '#f0f0f0ff',
-    tabSurface: '#dad9d9ff',
-    surface: '#ffffffff', // Search bars, categories
-    text: '#0b0c0dff',
-    subtext: '#45464aff',
-    primary: '#6366F1',
-    border: '#a67eb6ff',
-    card: '#F5F3F0',    // Warm off-white for bento boxes
-    accent: '#F8F7F5',  // Soft cream instead of pure white
+    background: '#F0F2FF',
+    tabSurface: '#FFFFFF',
+    surface: '#FFFFFF',
+    surfaceElevated: '#F7F8FF',
+    text: '#0D0F1A',
+    subtext: '#6B7280',
+    primary: '#5B4FE8',
+    primaryLight: '#EEF0FF',
+    secondary: '#10B981',
+    border: '#E8EAFF',
+    card: '#FFFFFF',
+    accent: '#F3F4FF',
     notification: '#EF4444',
-    header: '#c434c9ff',  // Semicircle purple
+    header: '#5B4FE8',
+    gradient1: '#5B4FE8',
+    gradient2: '#8B5CF6',
+    success: '#10B981',
+    warning: '#F59E0B',
+    danger: '#EF4444',
   },
   dark: {
-    background: '#040b25ff',
-    tabSurface: '#121b2bff',
-    surface: '#1b2d4dff', // Search bars, categories
-    text: '#F5F3F0',    // Warm off-white for text
-    subtext: '#9CA3AF',
-    primary: '#6366F1',
-    border: '#3b2550ff',
-    card: '#111E36',    // Bento boxes
-    accent: '#1E293B',
+    background: '#080B18',
+    tabSurface: '#0F1221',
+    surface: '#111527',
+    surfaceElevated: '#161A30',
+    text: '#F0F2FF',
+    subtext: '#8892B0',
+    primary: '#7C6FF7',
+    primaryLight: '#1A1B3A',
+    secondary: '#34D399',
+    border: '#1E2240',
+    card: '#111527',
+    accent: '#1A1B3A',
     notification: '#F87171',
-    header: '#07021aff', // Deep navy curve
+    header: '#0F1221',
+    gradient1: '#7C6FF7',
+    gradient2: '#A78BFA',
+    success: '#34D399',
+    warning: '#FBBF24',
+    danger: '#F87171',
   }
 };

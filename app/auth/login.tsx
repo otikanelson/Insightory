@@ -3,8 +3,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    Image,
-    ImageBackground,
     KeyboardAvoidingView,
     Platform,
     Pressable,
@@ -18,11 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function LoginScreen() {
-  const { theme, isDark } = useTheme();
-
-  const backgroundImage = isDark
-    ? require("../../assets/images/Background7.png")
-    : require("../../assets/images/Background9.png");
+  const { theme } = useTheme();
   const { login, isAuthenticated, role: userRole } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -30,9 +24,8 @@ export default function LoginScreen() {
   const [pinError, setPinError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showAuthorLogin, setShowAuthorLogin] = useState(false);
-  const [pinKey, setPinKey] = useState(0); // Key to force PinInput reset
+  const [pinKey, setPinKey] = useState(0);
 
-  // Auto-select role if passed as parameter
   useEffect(() => {
     if (params.role === 'admin' || params.role === 'staff') {
       setSelectedRole(params.role);
@@ -41,34 +34,22 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (isAuthenticated && userRole) {
-      // Navigate based on role
-      if (userRole === 'admin') {
-        router.replace('/admin/stats' as any);
-      } else {
-        router.replace('/(tabs)');
-      }
+      if (userRole === 'admin') router.replace('/admin/stats' as any);
+      else router.replace('/(tabs)');
     }
   }, [isAuthenticated, userRole]);
 
   const handlePinComplete = async (pin: string) => {
     if (!selectedRole) return;
-
     setIsLoading(true);
     setPinError(false);
-
     const success = await login(pin, selectedRole);
-
     if (success) {
-      // Role-based navigation
-      if (selectedRole === 'admin') {
-        router.replace('/admin/stats' as any);
-      } else {
-        router.replace('/(tabs)');
-      }
+      if (selectedRole === 'admin') router.replace('/admin/stats' as any);
+      else router.replace('/(tabs)');
     } else {
       setPinError(true);
       setIsLoading(false);
-      // Force PIN input to reset
       setPinKey(prev => prev + 1);
     }
   };
@@ -76,303 +57,212 @@ export default function LoginScreen() {
   const handleRoleSelect = (role: 'admin' | 'staff') => {
     setSelectedRole(role);
     setPinError(false);
-    setPinKey(prev => prev + 1); // Reset PIN input when selecting role
+    setPinKey(prev => prev + 1);
   };
 
   const handleBack = () => {
     setSelectedRole(null);
     setPinError(false);
-    setPinKey(prev => prev + 1); // Reset PIN input when going back
+    setPinKey(prev => prev + 1);
   };
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
+    <View style={[styles.root, { backgroundColor: theme.background }]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={[styles.container, { backgroundColor: "transparent" }]}>
-            {/* Header */}
-            <View style={[styles.headerCurve, { backgroundColor: theme.header }]}>
-              <Text style={styles.headerTitle}>StockQ</Text>
-            </View>
+          <View style={[styles.topBar, { backgroundColor: theme.primary }]} />
 
-      {/* Content */}
-      <View style={styles.content}>
-        {!selectedRole ? (
-          // Role Selection
-          <>
-            <Image
-              source={require('../../assets/images/logo.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={[styles.title, { color: theme.text }]}>
-              Welcome Back
-            </Text>
-            <Text style={[styles.subtitle, { color: theme.subtext }]}>
-              Select your role to continue
-            </Text>
-
-            <View style={styles.roleButtons}>
-              <Pressable
-                style={[styles.roleCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
-                onPress={() => handleRoleSelect('admin')}
-              >
-                <View style={[styles.roleIcon, { backgroundColor: theme.primary + '15' }]}>
-                  <Ionicons name="shield-checkmark" size={28} color={theme.primary} />
+          <View style={styles.content}>
+            {!selectedRole ? (
+              <>
+                <View style={[styles.logoMark, { backgroundColor: theme.primaryLight }]}>
+                  <Ionicons name="cube" size={36} color={theme.primary} />
                 </View>
-                <Text style={[styles.roleTitle, { color: theme.text }]}>Admin Login</Text>
-                <Text style={[styles.roleDesc, { color: theme.subtext }]}>
-                  Full access to all features
+                <Text style={[styles.appName, { color: theme.primary }]}>StockQ</Text>
+                <Text style={[styles.title, { color: theme.text }]}>Welcome back</Text>
+                <Text style={[styles.subtitle, { color: theme.subtext }]}>
+                  Choose your role to continue
                 </Text>
-              </Pressable>
 
-              <Pressable
-                style={[styles.roleCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
-                onPress={() => handleRoleSelect('staff')}
-              >
-                <View style={[styles.roleIcon, { backgroundColor: '#FF9500' + '15' }]}>
-                  <Ionicons name="people" size={28} color="#FF9500" />
+                <View style={styles.roleButtons}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.roleCard,
+                      { backgroundColor: theme.surface, borderColor: theme.border, opacity: pressed ? 0.85 : 1 },
+                    ]}
+                    onPress={() => handleRoleSelect('admin')}
+                  >
+                    <View style={[styles.roleIconWrap, { backgroundColor: theme.primaryLight }]}>
+                      <Ionicons name="shield-checkmark" size={26} color={theme.primary} />
+                    </View>
+                    <View style={styles.roleTextWrap}>
+                      <Text style={[styles.roleTitle, { color: theme.text }]}>Admin</Text>
+                      <Text style={[styles.roleDesc, { color: theme.subtext }]}>Full access to all features</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={theme.subtext} />
+                  </Pressable>
+
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.roleCard,
+                      { backgroundColor: theme.surface, borderColor: theme.border, opacity: pressed ? 0.85 : 1 },
+                    ]}
+                    onPress={() => handleRoleSelect('staff')}
+                  >
+                    <View style={[styles.roleIconWrap, { backgroundColor: '#F59E0B18' }]}>
+                      <Ionicons name="people" size={26} color="#F59E0B" />
+                    </View>
+                    <View style={styles.roleTextWrap}>
+                      <Text style={[styles.roleTitle, { color: theme.text }]}>Staff</Text>
+                      <Text style={[styles.roleDesc, { color: theme.subtext }]}>Manage inventory and sales</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={theme.subtext} />
+                  </Pressable>
                 </View>
-                <Text style={[styles.roleTitle, { color: theme.text }]}>Staff Login</Text>
-                <Text style={[styles.roleDesc, { color: theme.subtext }]}>
-                  Manage inventory and sales
+
+                <Pressable style={styles.setupRow} onPress={() => router.push('/auth/setup' as any)}>
+                  <Text style={[styles.setupText, { color: theme.subtext }]}>First time? </Text>
+                  <Text style={[styles.setupLink, { color: theme.primary }]}>Set up your account</Text>
+                </Pressable>
+
+                <Pressable style={styles.setupRow} onPress={() => router.push('/auth/staff-register' as any)}>
+                  <Text style={[styles.setupText, { color: theme.subtext }]}>Staff member? </Text>
+                  <Text style={[styles.setupLink, { color: theme.primary }]}>Join a store</Text>
+                </Pressable>
+              </>
+            ) : (
+              <>
+                <Pressable style={styles.backBtn} onPress={handleBack}>
+                  <View style={[styles.backBtnInner, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                    <Ionicons name="arrow-back" size={20} color={theme.text} />
+                  </View>
+                </Pressable>
+
+                <View style={[styles.roleIconLarge, {
+                  backgroundColor: selectedRole === 'admin' ? theme.primaryLight : '#F59E0B18'
+                }]}>
+                  <Ionicons
+                    name={selectedRole === 'admin' ? 'shield-checkmark' : 'people'}
+                    size={44}
+                    color={selectedRole === 'admin' ? theme.primary : '#F59E0B'}
+                  />
+                </View>
+
+                <Text style={[styles.title, { color: theme.text }]}>
+                  {selectedRole === 'admin' ? 'Admin Login' : 'Staff Login'}
                 </Text>
-              </Pressable>
-            </View>
+                <Text style={[styles.subtitle, { color: theme.subtext }]}>Enter your 4-digit PIN</Text>
 
-            {/* First time user link - moved here with proper spacing */}
-            <View style={styles.firstTimeContainer}>
-              <Pressable 
-                style={styles.firstTimeButton}
-                onPress={() => router.push('/auth/setup' as any)}
-              >
-                <Text style={[styles.firstTimeText, { color: theme.subtext }]}>
-                  First time here?{' '}
-                </Text>
-                <Text style={[styles.firstTimeLink, { color: theme.primary }]}>
-                  Set up your account
-                </Text>
-              </Pressable>
-            </View>
-          </>
-        ) : (
-          // PIN Entry
-          <>
-            <Pressable style={styles.backButton} onPress={handleBack}>
-              <Ionicons name="arrow-back" size={24} color={theme.primary} />
-            </Pressable>
-
-            <View style={[styles.roleIconLarge, { backgroundColor: theme.primary + '15' }]}>
-              <Ionicons
-                name={selectedRole === 'admin' ? 'shield-checkmark' : 'people'}
-                size={48}
-                color={theme.primary}
-              />
-            </View>
-
-            <Text style={[styles.title, { color: theme.text }]}>
-              {selectedRole === 'admin' ? 'Admin Login' : 'Staff Login'}
-            </Text>
-            <Text style={[styles.subtitle, { color: theme.subtext }]}>
-              Enter your 4-digit PIN
-            </Text>
-
-            <View style={styles.pinContainer}>
-              <PinInput
-                key={pinKey}
-                onComplete={handlePinComplete}
-                error={pinError}
-                disabled={isLoading}
-                onClear={() => {
-                  setPinError(false);
-                  setPinKey(prev => prev + 1);
-                }}
-              />
-              {pinError && (
-                <Text style={[styles.errorText, { color: theme.notification }]}>
-                  Incorrect PIN. Please try again.
-                </Text>
-              )}
-            </View>
-          </>
-        )}
-      </View>
-
-      {/* Footer - Only show author link when role is not selected */}
-      {!selectedRole && (
-        <View style={styles.footer}>
-
-          {/* Author Login Link */}
-          <Pressable 
-            style={styles.authorLink}
-            onPress={() => setShowAuthorLogin(true)}
-          >
-            <Text style={[styles.authorLinkText, { color: theme.subtext + '80' }]}>
-              Author
-            </Text>
-          </Pressable>
-        </View>
-      )}
-
-      {/* Author Login Modal */}
-      <AuthorLogin visible={showAuthorLogin} onClose={() => setShowAuthorLogin(false)} />
+                <View style={styles.pinContainer}>
+                  <PinInput
+                    key={pinKey}
+                    onComplete={handlePinComplete}
+                    error={pinError}
+                    disabled={isLoading}
+                    onClear={() => { setPinError(false); setPinKey(prev => prev + 1); }}
+                  />
+                  {pinError && (
+                    <Text style={[styles.errorText, { color: theme.notification }]}>
+                      Incorrect PIN. Please try again.
+                    </Text>
+                  )}
+                </View>
+              </>
+            )}
           </View>
+
+          {!selectedRole && (
+            <View style={styles.footer}>
+              <Pressable onPress={() => setShowAuthorLogin(true)}>
+                <Text style={[styles.authorText, { color: theme.subtext }]}>Author</Text>
+              </Pressable>
+            </View>
+          )}
+
+          <AuthorLogin visible={showAuthorLogin} onClose={() => setShowAuthorLogin(false)} />
         </ScrollView>
       </KeyboardAvoidingView>
-    </ImageBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  headerCurve: {
-    height: 150,
-    borderBottomLeftRadius: 1000,
-    borderBottomRightRadius: 1000,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 40,
-    width: '130%',
-    alignSelf: 'center',
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: '#FFFFFF',
-    letterSpacing: 1,
-  },
+  root: { flex: 1 },
+  topBar: { height: 5 },
   content: {
     flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 28,
+    paddingTop: 56,
+    paddingBottom: 40,
+    minHeight: 520,
+  },
+  logoMark: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 30,
-    paddingBottom: 40,
-    minHeight: 500,
+    marginBottom: 16,
   },
-  logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '900',
+  appName: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 4,
+    textTransform: 'uppercase',
     marginBottom: 10,
   },
-  subtitle: {
-    fontSize: 15,
-    marginBottom: 40,
-    textAlign: 'center',
-  },
-  roleButtons: {
-    width: '100%',
-    gap: 16,
-    marginBottom: 24,
-  },
+  title: { fontSize: 28, fontWeight: '800', marginBottom: 8, letterSpacing: -0.5 },
+  subtitle: { fontSize: 15, marginBottom: 36, textAlign: 'center' },
+  roleButtons: { width: '100%', gap: 12, marginBottom: 28 },
   roleCard: {
-    padding: 20,
-    borderRadius: 18,
-    borderWidth: 2,
-    alignItems: 'center',
-  },
-  roleIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  roleTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 6,
-  },
-  roleDesc: {
-    fontSize: 13,
-    textAlign: 'center',
-  },
-  firstTimeContainer: {
-    width: '100%',
-    alignItems: 'center',
-    paddingTop: 8,
-  },
-  firstTimeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
+    padding: 18,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    gap: 14,
+  },
+  roleIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     justifyContent: 'center',
-    paddingVertical: 12,
+    alignItems: 'center',
   },
-  firstTimeText: {
-    fontSize: 14,
-  },
-  firstTimeLink: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  backButton: {
-    position: 'absolute',
-    top: -100,
-    left: 0,
-    padding: 10,
+  roleTextWrap: { flex: 1 },
+  roleTitle: { fontSize: 17, fontWeight: '700', marginBottom: 3 },
+  roleDesc: { fontSize: 13 },
+  setupRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  setupText: { fontSize: 14 },
+  setupLink: { fontSize: 14, fontWeight: '700' },
+  backBtn: { alignSelf: 'flex-start', marginBottom: 32 },
+  backBtnInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   roleIconLarge: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 96,
+    height: 96,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
   },
-  pinContainer: {
-    alignItems: 'center',
-    gap: 16,
-  },
-  errorText: {
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    paddingBottom: 30,
-    paddingHorizontal: 30,
-    gap: 12,
-  },
-  diagnosticsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  diagnosticsText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  authorLink: {
-    paddingVertical: 10,
-  },
-  authorLinkText: {
-    fontSize: 12,
-    textAlign: 'center',
-    opacity: 0.5,
-  },
+  pinContainer: { alignItems: 'center', gap: 16, marginTop: 8 },
+  errorText: { fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  footer: { alignItems: 'center', paddingBottom: 32 },
+  authorText: { fontSize: 12, opacity: 0.5 },
 });

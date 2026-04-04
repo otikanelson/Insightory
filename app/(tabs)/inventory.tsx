@@ -1,31 +1,43 @@
+import { DisabledFeatureOverlay } from "@/components/DisabledFeatureOverlay";
 import { HelpTooltip } from "@/components/HelpTooltip";
 import { ProductCard } from "@/components/ProductCard";
 import { useTheme } from "@/context/ThemeContext";
+import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { Product, useProducts } from "@/hooks/useProducts";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { Href, useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  FlatList,
-  Image,
-  ImageBackground,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
+    FlatList,
+    Image,
+    Pressable,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
 } from "react-native";
 
 export default function InventoryScreen() {
   const router = useRouter();
   const { theme, isDark } = useTheme();
   const { products, loading, refresh } = useProducts();
-
-  const backgroundImage = isDark
-    ? require("../../assets/images/Background7.png")
-    : require("../../assets/images/Background9.png");
+  
+  // Check feature access for viewing inventory
+  const viewAccess = useFeatureAccess('viewInventory');
+  
+  // Show overlay if access is denied
+  if (!viewAccess.isAllowed) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <DisabledFeatureOverlay 
+          reason={viewAccess.reason || 'Access denied'} 
+          isViewOnly={viewAccess.isViewOnly}
+        />
+      </View>
+    );
+  }
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<keyof Product | "risk" | "velocity">("name");
@@ -120,13 +132,12 @@ export default function InventoryScreen() {
   }, [filteredProducts, sortField, analytics]);
 
   return (
-    <ImageBackground source={backgroundImage} style={{ flex: 1 }} resizeMode="cover">
-      <View style={{ flex: 1, backgroundColor: "transparent" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
       <View style={styles.container}>
         <View style={styles.topSection}>
-          <Text style={[styles.subtitle, { color: theme.primary }]}>STOCK_MANAGEMENT</Text>
+          <Text style={[styles.subtitle, { color: theme.primary }]}>STOCK MANAGEMENT</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={[styles.title, { color: theme.text }]}>INVENTORY</Text>
+            <Text style={[styles.title, { color: theme.text }]}>Inventory</Text>
             <HelpTooltip
               title="Inventory Management"
               content={[
@@ -462,16 +473,15 @@ export default function InventoryScreen() {
           }}
         />
       </View>
-      </View>
-    </ImageBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 60 },
   topSection: { paddingHorizontal: 20, marginBottom: 10 },
-  subtitle: { fontSize: 10, fontWeight: "900", letterSpacing: 2 },
-  title: { fontSize: 25, fontWeight: "900", letterSpacing: -1 },
+  subtitle: { fontSize: 10, fontWeight: '700', letterSpacing: 2 },
+  title: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
   searchRow: { flexDirection: "row", gap: 10, marginBottom: 15 },
   searchBar: {
     flex: 1,
