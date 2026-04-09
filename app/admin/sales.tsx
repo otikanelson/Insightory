@@ -54,19 +54,8 @@ export default function AdminSales() {
   
   // Check feature access for processing sales
   const salesAccess = useFeatureAccess('processSales');
-  
-  // Show overlay if access is denied
-  if (!salesAccess.isAllowed) {
-    return (
-      <View style={{ flex: 1, backgroundColor: theme.background }}>
-        <DisabledFeatureOverlay 
-          reason={salesAccess.reason || 'Access denied'} 
-        />
-      </View>
-    );
-  }
 
-  // State
+  // State - must be declared before any early returns
   const [cart, setCart] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showFefoModal, setShowFefoModal] = useState(false);
@@ -333,6 +322,10 @@ export default function AdminSales() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
+      {/* Show overlay if access is denied */}
+      {!salesAccess.isAllowed ? (
+        <DisabledFeatureOverlay reason={salesAccess.reason || 'Access denied'} />
+      ) : (
       <View style={{ flex: 1, backgroundColor: theme.background }}>
       
 
@@ -954,7 +947,8 @@ export default function AdminSales() {
           </View>
         </View>
       </Modal>
-    </View>
+      </View>
+      )}
     </View>
   );
 }

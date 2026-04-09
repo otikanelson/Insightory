@@ -1037,7 +1037,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 15,
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '600',
   },
   modalActions: {

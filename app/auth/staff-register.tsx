@@ -21,15 +21,11 @@ import { useTheme } from '../../context/ThemeContext';
 type RegistrationStep = 'name' | 'permissions' | 'pin' | 'complete';
 
 interface Permissions {
-  viewInventory: boolean;
+  viewProducts: boolean;
+  scanProducts: boolean;
+  registerProducts: boolean;
   addProducts: boolean;
-  editProducts: boolean;
-  deleteProducts: boolean;
   processSales: boolean;
-  scanBarcodes: boolean;
-  viewAnalytics: boolean;
-  exportData: boolean;
-  manageCategories: boolean;
 }
 
 export default function StaffRegisterScreen() {
@@ -46,15 +42,11 @@ export default function StaffRegisterScreen() {
   
   // Permissions state
   const [permissions, setPermissions] = useState<Permissions>({
-    viewInventory: true,
+    viewProducts: true,
+    scanProducts: true,
+    registerProducts: true,
     addProducts: true,
-    editProducts: true,
-    deleteProducts: false,
     processSales: true,
-    scanBarcodes: true,
-    viewAnalytics: false,
-    exportData: false,
-    manageCategories: false,
   });
 
   const handlePinComplete = async (pin: string) => {
@@ -190,19 +182,25 @@ export default function StaffRegisterScreen() {
   };
 
   const togglePermission = (key: keyof Permissions) => {
+    if (key === 'viewProducts') return; // compulsory
+
+    if (key === 'addProducts' && permissions.addProducts) {
+      setPermissions(prev => ({ ...prev, addProducts: false, registerProducts: false }));
+      return;
+    }
+    if (key === 'registerProducts' && !permissions.registerProducts && !permissions.addProducts) {
+      setPermissions(prev => ({ ...prev, registerProducts: true, addProducts: true }));
+      return;
+    }
     setPermissions(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const permissionsList = [
-    { key: 'viewInventory' as keyof Permissions, label: 'View Inventory', icon: 'eye-outline', description: 'View all products and stock levels' },
-    { key: 'addProducts' as keyof Permissions, label: 'Add Products', icon: 'add-circle-outline', description: 'Add new products and batches' },
-    { key: 'editProducts' as keyof Permissions, label: 'Edit Products', icon: 'create-outline', description: 'Modify product details and prices' },
-    { key: 'deleteProducts' as keyof Permissions, label: 'Delete Products', icon: 'trash-outline', description: 'Remove products from inventory' },
+    { key: 'viewProducts' as keyof Permissions, label: 'View Products', icon: 'eye-outline', description: 'View all products and stock levels', isCompulsory: true },
+    { key: 'scanProducts' as keyof Permissions, label: 'Scan Products', icon: 'scan-outline', description: 'Access barcode scanner functionality' },
+    { key: 'registerProducts' as keyof Permissions, label: 'Register Products', icon: 'add-circle-outline', description: 'Register new products after scanning' },
+    { key: 'addProducts' as keyof Permissions, label: 'Add Products', icon: 'cube-outline', description: 'Add inventory to existing products' },
     { key: 'processSales' as keyof Permissions, label: 'Process Sales', icon: 'cart-outline', description: 'Complete sales transactions' },
-    { key: 'scanBarcodes' as keyof Permissions, label: 'Scan Barcodes', icon: 'scan-outline', description: 'Use barcode scanner' },
-    { key: 'viewAnalytics' as keyof Permissions, label: 'View Analytics', icon: 'analytics-outline', description: 'Access sales reports and insights' },
-    { key: 'exportData' as keyof Permissions, label: 'Export Data', icon: 'download-outline', description: 'Export inventory and sales data' },
-    { key: 'manageCategories' as keyof Permissions, label: 'Manage Categories', icon: 'folder-outline', description: 'Add and edit product categories' },
   ];
 
   return (
@@ -279,7 +277,7 @@ export default function StaffRegisterScreen() {
                       key={perm.key}
                       style={[
                         styles.permissionRow,
-                        { backgroundColor: theme.surface, borderColor: theme.border }
+                        { backgroundColor: theme.surface, borderColor: theme.border, opacity: perm.isCompulsory ? 0.7 : 1 }
                       ]}
                     >
                       <View style={[styles.permIconBox, { backgroundColor: theme.primary + '15' }]}>
@@ -297,6 +295,7 @@ export default function StaffRegisterScreen() {
                         value={permissions[perm.key]}
                         onValueChange={() => togglePermission(perm.key)}
                         trackColor={{ true: theme.primary, false: theme.border }}
+                        disabled={perm.isCompulsory}
                       />
                     </View>
                   ))}
@@ -310,7 +309,7 @@ export default function StaffRegisterScreen() {
                   <Ionicons name="key" size={48} color={theme.primary} />
                 </View>
                 <Text style={[styles.title, { color: theme.text }]}>
-                  {isFirstPin ? 'Create Staff PIN' : 'Confirm PIN'}
+                  {isFirstPin ? 'Create Staff Log in PIN' : 'Confirm PIN'}
                 </Text>
                 <Text style={[styles.subtitle, { color: theme.subtext }]}>
                   {isFirstPin

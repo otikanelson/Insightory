@@ -795,7 +795,6 @@ const styles = StyleSheet.create({
   },
   authorLink: {
     marginTop: 20,
-    paddingVertical: 10,
   },
   authorLinkText: {
     fontSize: 12,
