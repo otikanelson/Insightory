@@ -4,21 +4,21 @@ import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    View
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View
 } from "react-native";
 import Toast from 'react-native-toast-message';
 import { PinInput } from '../../components/PinInput';
 import { useTheme } from '../../context/ThemeContext';
 
-type RegistrationStep = 'name' | 'permissions' | 'pin' | 'complete';
+type RegistrationStep = 'store-verify' | 'name' | 'permissions' | 'pin' | 'complete';
 
 interface Permissions {
   viewProducts: boolean;
@@ -32,7 +32,11 @@ export default function StaffRegisterScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   
-  const [step, setStep] = useState<RegistrationStep>('name');
+  const [step, setStep] = useState<RegistrationStep>('store-verify');
+  const [storeName, setStoreName] = useState('');
+  const [adminLoginPin, setAdminLoginPin] = useState('');
+  const [adminPinKey, setAdminPinKey] = useState(0);
+  const [verifyingStore, setVerifyingStore] = useState(false);
   const [staffName, setStaffName] = useState('');
   const [staffPin, setStaffPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -80,11 +84,12 @@ export default function StaffRegisterScreen() {
           const requestData = {
             name: staffName,
             pin: pin,
-            createdBy: adminId,
+            storeName: storeName.trim(),
+            adminLoginPin: adminLoginPin,
             permissions: permissions
           };
           
-          const response = await axios.post(`${API_URL}/auth/staff`, requestData);
+          const response = await axios.post(`${API_URL}/auth/staff/join`, requestData);
 
           if (response.data.success) {
             const staffId = response.data.data.user.id;
@@ -149,7 +154,13 @@ export default function StaffRegisterScreen() {
   };
 
   const handleContinue = () => {
-    if (step === 'name') {
+    if (step === 'store-verify') {
+      if (!storeName.trim()) {
+        Toast.show({ type: 'error', text1: 'Store Name Required', text2: 'Please enter the store name' });
+        return;
+      }
+      // admin PIN is collected via PinInput, handled in handleAdminPinComplete
+    } else if (step === 'name') {
       if (!staffName.trim()) {
         Toast.show({
           type: 'error',
@@ -162,13 +173,47 @@ export default function StaffRegisterScreen() {
     } else if (step === 'permissions') {
       setStep('pin');
     } else if (step === 'complete') {
-      router.replace('/admin/settings' as any);
+      router.replace('/auth/login' as any);
+    }
+  };
+
+  const handleAdminPinComplete = async (pin: string) => {
+    if (!storeName.trim()) {
+      Toast.show({ type: 'error', text1: 'Store Name Required', text2: 'Enter the store name first' });
+      setAdminPinKey(prev => prev + 1);
+      return;
+    }
+    setVerifyingStore(true);
+    try {
+      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api';
+      // Verify store + admin PIN combo exists
+      const response = await axios.post(`${API_URL}/auth/staff/verify-store`, {
+        storeName: storeName.trim(),
+        adminLoginPin: pin,
+      });
+      if (response.data.success) {
+        setAdminLoginPin(pin);
+        setStep('name');
+      } else {
+        Toast.show({ type: 'error', text1: 'Verification Failed', text2: response.data.error || 'Invalid store or admin PIN' });
+        setAdminPinKey(prev => prev + 1);
+      }
+    } catch (error: any) {
+      const msg = error.response?.data?.error || 'Invalid store name or admin PIN';
+      Toast.show({ type: 'error', text1: 'Verification Failed', text2: msg });
+      setAdminPinKey(prev => prev + 1);
+    } finally {
+      setVerifyingStore(false);
     }
   };
 
   const handleBack = () => {
-    if (step === 'permissions') {
-      setStep('name');
+    if (step === 'store-verify') {
+      router.replace('/auth/login' as any);
+    } else if (step === 'name') {
+      setStep('store-verify');
+      setAdminLoginPin('');
+      setAdminPinKey(prev => prev + 1);
     } else if (step === 'pin') {
       setStep('permissions');
       setIsFirstPin(true);
@@ -176,8 +221,10 @@ export default function StaffRegisterScreen() {
       setConfirmPin('');
       setPinError(false);
       setPinKey(prev => prev + 1);
+    } else if (step === 'permissions') {
+      setStep('name');
     } else {
-      router.replace('/admin/settings' as any);
+      router.replace('/auth/login' as any);
     }
   };
 
@@ -226,6 +273,44 @@ export default function StaffRegisterScreen() {
 
           {/* Content */}
           <View style={styles.content}>
+            {step === 'store-verify' && (
+              <>
+                <View style={[styles.iconCircle, { backgroundColor: theme.primary + '15' }]}>
+                  <Ionicons name="storefront" size={48} color={theme.primary} />
+                </View>
+                <Text style={[styles.title, { color: theme.text }]}>Join a Store</Text>
+                <Text style={[styles.subtitle, { color: theme.subtext }]}>
+                  Enter the store name and the admin's login PIN to verify access
+                </Text>
+
+                <TextInput
+                  style={[styles.nameInput, { color: theme.text, borderColor: theme.border, backgroundColor: theme.surface }]}
+                  placeholder="Store name"
+                  placeholderTextColor={theme.subtext}
+                  value={storeName}
+                  onChangeText={setStoreName}
+                  autoFocus
+                />
+
+                <Text style={[styles.subtitle, { color: theme.subtext, marginBottom: 12, marginTop: 8 }]}>
+                  Admin login PIN
+                </Text>
+
+                <View style={styles.pinContainer}>
+                  <PinInput
+                    key={adminPinKey}
+                    onComplete={handleAdminPinComplete}
+                    error={false}
+                    disabled={verifyingStore}
+                    onClear={() => setAdminPinKey(prev => prev + 1)}
+                  />
+                  {verifyingStore && (
+                    <Text style={[styles.errorText, { color: theme.primary }]}>Verifying...</Text>
+                  )}
+                </View>
+              </>
+            )}
+
             {step === 'name' && (
               <>
                 <View style={[styles.iconCircle, { backgroundColor: theme.primary + '15' }]}>

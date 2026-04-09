@@ -592,82 +592,111 @@ exports.checkAdminSecurityPin = async (req, res) => {
     });
   }
 };
-// Join existing store (staff registration with store code)
+// Verify store + admin PIN (used before staff registration to confirm access)
+exports.verifyStore = async (req, res) => {
+  try {
+    const { storeName, adminLoginPin } = req.body;
+
+    if (!storeName || !adminLoginPin) {
+      return res.status(400).json({ success: false, error: 'Store name and admin PIN are required' });
+    }
+
+    const store = await Store.findOne({
+      name: { $regex: new RegExp(`^${storeName.trim()}$`, 'i') },
+      isActive: { $ne: false }
+    });
+
+    if (!store) {
+      return res.status(404).json({ success: false, error: 'Store not found. Check the store name.' });
+    }
+
+    const admin = await User.findOne({ role: 'admin', storeId: store._id, loginPin: adminLoginPin, isActive: true });
+
+    if (!admin) {
+      return res.status(401).json({ success: false, error: 'Invalid admin PIN for this store.' });
+    }
+
+    res.json({ success: true, data: { storeName: store.name, storeId: store._id } });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Verification failed' });
+  }
+};
+
+// Join existing store (staff registration with store name + admin login PIN)
 exports.joinStore = async (req, res) => {
   try {
     console.log('=== JOIN STORE REQUEST RECEIVED ===');
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
     
-    const { name, pin, storeId } = req.body;
+    const { name, pin, storeName, adminLoginPin } = req.body;
 
-    console.log('Extracted data:', { name, pin: pin ? '****' : 'missing', storeId });
-
-    if (!name || !pin || !storeId) {
-      console.log('❌ Validation failed: Missing name, PIN, or store ID');
+    if (!name || !pin || !storeName || !adminLoginPin) {
       return res.status(400).json({
         success: false,
-        error: 'Name, PIN, and store ID are required'
+        error: 'Name, PIN, store name, and admin login PIN are required'
       });
     }
 
     if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
-      console.log('❌ Validation failed: Invalid PIN format');
       return res.status(400).json({
         success: false,
         error: 'PIN must be exactly 4 digits'
       });
     }
 
-    console.log('✅ Validation passed, checking for existing store...');
+    // Find store by name (case-insensitive)
+    const store = await Store.findOne({
+      name: { $regex: new RegExp(`^${storeName.trim()}$`, 'i') },
+      isActive: { $ne: false }
+    });
 
-    // Verify store exists
-    const store = await Store.findById(storeId);
     if (!store) {
-      console.log('❌ Store not found:', storeId);
       return res.status(404).json({
         success: false,
-        error: 'Store not found'
+        error: 'Store not found. Check the store name and try again.'
       });
     }
 
-    console.log('✅ Store found:', store.name);
-
-    // Check if PIN is already in use in this store
-    const existingUser = await User.findOne({ 
-      loginPin: pin, 
-      storeId: storeId
+    // Verify admin login PIN for this store
+    const admin = await User.findOne({
+      role: 'admin',
+      storeId: store._id,
+      loginPin: adminLoginPin,
+      isActive: true
     });
-    
+
+    if (!admin) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid admin PIN for this store.'
+      });
+    }
+
+    // Check if staff PIN is already in use in this store
+    const existingUser = await User.findOne({ loginPin: pin, storeId: store._id });
     if (existingUser) {
-      console.log('❌ PIN already in use by user:', existingUser._id);
       return res.status(400).json({
         success: false,
-        error: 'This PIN is already in use in this store. Please choose a different PIN.'
+        error: 'This PIN is already in use in this store. Choose a different PIN.'
       });
     }
 
-    console.log('✅ PIN is available, creating new staff user...');
-
-    // Create staff user
     const staff = new User({
       name,
       loginPin: pin,
       role: 'staff',
       storeId: store._id,
-      storeName: store.name
-    });
-
-    console.log('Staff object created (before save):', {
-      name: staff.name,
-      role: staff.role,
-      storeId: staff.storeId,
-      storeName: staff.storeName
+      storeName: store.name,
+      createdBy: admin._id,
+      permissions: {
+        viewProducts: true,
+        scanProducts: true,
+        registerProducts: true,
+        addProducts: true,
+        processSales: true,
+      }
     });
 
     const savedStaff = await staff.save();
-    
-    console.log('✅ Staff saved successfully!');
-    console.log('Saved staff ID:', savedStaff._id);
 
     res.status(201).json({
       success: true,
