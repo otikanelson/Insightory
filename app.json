@@ -2,7 +2,7 @@
   "expo": {
     "name": "Insightory",
     "slug": "stockq",
-    "version": "5.1.1",
+    "version": "6.2.1",
     "orientation": "portrait",
     "icon": "./assets/images/favicon.png",
     "backgroundColor": "#0D1B4B",
@@ -22,7 +22,7 @@
         "foregroundImage": "./assets/images/icon.png"
       },
       "package": "com.son_the_nel.Inventory",
-      "versionCode": 5,
+      "versionCode": 6,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",

@@ -17,7 +17,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://inventory-application-git-backend-otikanelsons-projects.vercel.app/api",
+        "EXPO_PUBLIC_API_URL": "https://inventory-application-xjc5.onrender.com/api",
         "EAS_SKIP_AUTO_FINGERPRINT": "1"
       },
       "channel": "preview"
@@ -27,7 +27,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://inventory-application-git-backend-otikanelsons-projects.vercel.app/api",
+        "EXPO_PUBLIC_API_URL": "https://inventory-application-xjc5.onrender.com/api",
         "EAS_SKIP_AUTO_FINGERPRINT": "1"
       },
       "channel": "production"
@@ -37,7 +37,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://inventory-application-git-backend-otikanelsons-projects.vercel.app/api",
+        "EXPO_PUBLIC_API_URL": "https://inventory-application-xjc5.onrender.com/api",
         "EAS_SKIP_AUTO_FINGERPRINT": "1"
       },
       "channel": "production"
