@@ -126,12 +126,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Try backend API first
       try {
+        console.log('🔐 Attempting login to:', `${API_URL}/auth/login`);
+        console.log('🔐 Role:', userRole);
+        
         const response = await axios.post(`${API_URL}/auth/login`, {
           pin,
           role: userRole
         }, {
           timeout: 30000 // Increased to 30 seconds for Vercel cold starts
         });
+
+        console.log('✅ Login response:', response.data);
 
         if (response.data.success) {
           const { user: userData, sessionToken } = response.data.data;
@@ -183,6 +188,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (apiError: any) {
         // Comprehensive error handling for different failure types
+        console.error('❌ Login API Error:', apiError);
+        console.error('❌ Error response:', apiError.response?.data);
+        console.error('❌ Error status:', apiError.response?.status);
+        console.error('❌ Error code:', apiError.code);
+        
         let errorMessage = 'Could not connect to server';
         let shouldFallbackToLocal = false;
 

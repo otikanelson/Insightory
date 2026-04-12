@@ -4,12 +4,18 @@ const authController = require('../controllers/authController');
 const authenticate = require('../middleware/authenticate');
 const tenantFilter = require('../middleware/tenantFilter');
 
+// Log when routes are loaded
+console.log('🔐 Auth routes module loaded');
+
 // Public routes (no authentication required)
 // Author login
 router.post('/author/login', authController.authorLogin);
 
 // Login
-router.post('/login', authController.login);
+router.post('/login', (req, res, next) => {
+  console.log('🔐 Login route hit!');
+  authController.login(req, res, next);
+});
 
 // Setup admin (first-time)
 router.post('/setup', authController.setupAdmin);

@@ -59,6 +59,8 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Request logging middleware for debugging
 app.use((req, res, next) => {
   console.log(`📨 ${req.method} ${req.path}`);
+  console.log(`📍 Full URL: ${req.url}`);
+  console.log(`🔍 Base URL: ${req.baseUrl}`);
   if ((req.method === 'POST' || req.method === 'PUT') && req.body) {
     console.log('Request body keys:', Object.keys(req.body));
   }
@@ -110,7 +112,9 @@ app.get('/api', (req, res) => {
 });
 
 // API Routes
+console.log('📍 Mounting API routes...');
 app.use('/api/auth', require('./routes/authRoutes'));
+console.log('✅ Auth routes mounted at /api/auth');
 app.use('/api/author', require('./routes/authorRoutes'));
 app.use('/api/stores', require('./routes/storeRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
@@ -118,6 +122,7 @@ app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/alerts', require('./routes/alertsRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
+console.log('✅ All API routes mounted');
 
 // Lightweight health check for uptime monitoring (must be after other routes)
 app.get('/api/health', (req, res) => {
@@ -178,9 +183,17 @@ app.use((err, req, res, next) => {
 
 // 404 handler - catch all unmatched routes
 app.use((req, res) => {
+  console.log(`❌ 404 - Route not found: ${req.method} ${req.path}`);
+  console.log(`❌ Full URL: ${req.url}`);
+  console.log(`❌ Base URL: ${req.baseUrl}`);
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    message: 'Route not found',
+    debug: {
+      method: req.method,
+      path: req.path,
+      url: req.url
+    }
   });
 });
 
