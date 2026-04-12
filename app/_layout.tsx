@@ -12,6 +12,7 @@ import { TourProvider } from '../context/TourContext';
 // Import axios configuration to set up interceptors
 import '../utils/axiosConfig';
 
+
 // Suppress console warnings in production
 if (__DEV__ === false) {
   const originalWarn = console.warn;
