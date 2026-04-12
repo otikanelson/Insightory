@@ -30,6 +30,7 @@ export default function AdminLayout() {
   const [hasPin, setHasPin] = useState(false);
   const [autoLogoutEnabled, setAutoLogoutEnabled] = useState(true);
   const [autoLogoutTime, setAutoLogoutTime] = useState(30);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
 
   // Check authentication on mount and when screen focuses
   useFocusEffect(
@@ -37,6 +38,14 @@ export default function AdminLayout() {
       checkAuth();
     }, [])
   );
+
+  // Handle redirect outside of checkAuth to avoid hook issues
+  React.useEffect(() => {
+    if (shouldRedirect) {
+      router.replace("/(tabs)");
+      setShouldRedirect(false);
+    }
+  }, [shouldRedirect]);
 
   const checkAuth = async () => {
     try {
@@ -50,7 +59,8 @@ export default function AdminLayout() {
           text2: "Staff cannot access admin dashboard.",
           visibilityTime: 4000,
         });
-        router.replace("/(tabs)");
+        setShouldRedirect(true);
+        setLoading(false);
         return;
       }
 
@@ -62,7 +72,8 @@ export default function AdminLayout() {
           text2: "Admin access required.",
           visibilityTime: 4000,
         });
-        router.replace("/(tabs)");
+        setShouldRedirect(true);
+        setLoading(false);
         return;
       }
 

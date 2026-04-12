@@ -59,9 +59,12 @@ exports.authorLogin = async (req, res) => {
 // Login user
 exports.login = async (req, res) => {
   try {
+    console.log('🔐 Login attempt received');
     const { pin, role, storeName } = req.body;
+    console.log('🔐 Login data:', { pin: pin ? '****' : 'missing', role, storeName });
 
     if (!pin || !role) {
+      console.log('❌ Missing pin or role');
       return res.status(400).json({
         success: false,
         error: 'PIN and role are required'
@@ -76,15 +79,20 @@ exports.login = async (req, res) => {
       query.storeName = storeName;
     }
 
+    console.log('🔍 Searching for user with query:', { ...query, loginPin: '****' });
+
     // Find user by loginPin and role
     const user = await User.findOne(query);
     
     if (!user) {
+      console.log('❌ User not found');
       return res.status(401).json({
         success: false,
         error: 'Invalid credentials'
       });
     }
+
+    console.log('✅ User found:', user._id);
 
     // Update last login
     user.lastLogin = new Date();
@@ -119,15 +127,18 @@ exports.login = async (req, res) => {
       responseData.user.securityPin = user.securityPin;
     }
 
+    console.log('✅ Login successful for user:', user.name);
     res.json({
       success: true,
       data: responseData
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('❌ Login error:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      error: 'Login failed'
+      error: 'Login failed',
+      message: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message
     });
   }
 };
