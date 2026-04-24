@@ -91,9 +91,20 @@ export const useAlerts = () => {
 
       setAlerts(processed);
       setSummary(backendData.summary);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Fetch Alerts Error:", err);
-      setError("Failed to fetch alerts");
+      // Handle different types of errors gracefully
+      if (err.response?.status === 401) {
+        setError("Authentication required. Please log in.");
+      } else if (err.response?.status === 500) {
+        setError("Server error. Please try again later.");
+      } else if (err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK') {
+        setError("Unable to reach server. Check your connection.");
+      } else {
+        setError("Failed to fetch alerts");
+      }
+      setAlerts([]);
+      setSummary(null);
     } finally {
       setLoading(false);
     }

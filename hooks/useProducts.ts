@@ -82,11 +82,15 @@ export const useProducts = () => {
       setProducts(formattedData);
       setError(null);
     } catch (err: any) {
-      // Check if it's a server error (500) vs network error
-      if (err.response?.status === 500) {
+      // Handle different types of errors gracefully
+      if (err.response?.status === 401) {
+        setError("Authentication required. Please log in.");
+      } else if (err.response?.status === 500) {
         setError("Database connection issue. Please check backend.");
-      } else {
+      } else if (err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK') {
         setError("Unable to reach server. Check your connection.");
+      } else {
+        setError("Unable to load products. Please try again.");
       }
       setProducts([]); // Set empty array so app doesn't crash
     } finally {

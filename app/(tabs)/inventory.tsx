@@ -10,13 +10,13 @@ import axios from "axios";
 import { Href, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    FlatList,
-    Image,
-    Pressable,
-    RefreshControl,
-    StyleSheet,
-    TextInput,
-    View
+  FlatList,
+  Image,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  TextInput,
+  View
 } from "react-native";
 import { ThemedText } from '../../components/ThemedText';
 
@@ -33,7 +33,7 @@ export default function InventoryScreen() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<keyof Product | "risk" | "velocity">("name");
-  const [displayMode, setDisplayMode] = useState<"card" | "list" | "rect">("card");
+  const [displayMode, setDisplayMode] = useState<"card" | "list" | "rect">("rect");
   const [analytics, setAnalytics] = useState<Record<string, { velocity: number; riskScore: number }>>({});
 
   // Refresh inventory when screen comes into focus
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
   topSection: { paddingHorizontal: 20, marginBottom: 10 },
   subtitle: { fontSize: 10, letterSpacing: 2 },
   title: { fontSize: 26, letterSpacing: -0.5 },
-  searchRow: { flexDirection: "row", gap: 10, margin: 15 },
+  searchRow: { flexDirection: "row", gap: 10, marginVertical: 15 },
   searchBar: {
     flex: 1,
     flexDirection: "row",

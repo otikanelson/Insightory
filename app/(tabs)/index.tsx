@@ -33,7 +33,7 @@ const CARD_COLORS_DARK = {
 export default function DashboardScreen() {
   const router = useRouter();
   const { theme, isDark } = useTheme();
-  const { user, role } = useAuth();
+  const { user, role, isAuthenticated, loading: authLoading } = useAuth();
   const insets = useSafeAreaInsets();
 
   const { inventoryStats, loading: productsLoading, refresh: refreshProducts } = useProducts();
@@ -43,14 +43,19 @@ export default function DashboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      refreshProducts();
-      refreshAlerts();
-    }, [refreshProducts, refreshAlerts])
+      // Only fetch data if user is authenticated
+      if (isAuthenticated) {
+        refreshProducts();
+        refreshAlerts();
+      }
+    }, [refreshProducts, refreshAlerts, isAuthenticated])
   );
 
   const onRefresh = useCallback(async () => {
-    await Promise.all([refreshProducts(), refreshAlerts()]);
-  }, [refreshProducts, refreshAlerts]);
+    if (isAuthenticated) {
+      await Promise.all([refreshProducts(), refreshAlerts()]);
+    }
+  }, [refreshProducts, refreshAlerts, isAuthenticated]);
 
   const cards = isDark ? CARD_COLORS_DARK : CARD_COLORS;
   const urgentAlerts = (summary?.expired ?? 0) + (summary?.critical ?? 0);
@@ -65,11 +70,29 @@ export default function DashboardScreen() {
 
   const firstName = user?.name?.split(" ")[0] ?? "there";
 
+  // Show loading state if authentication is still loading
+  if (authLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ThemedText style={{ color: theme.subtext }}>Loading...</ThemedText>
+      </View>
+    );
+  }
+
+  // Show loading state if not authenticated yet
+  if (!isAuthenticated) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ThemedText style={{ color: theme.subtext }}>Please log in to continue</ThemedText>
+      </View>
+    );
+  }
+
   const operationCards = [
     {
       key: "inventory",
       label: "Inventory",
-      subtitle: `${inventoryStats.totalSkus} SKUs`,
+      subtitle: `${inventoryStats?.totalSkus ?? 0} SKUs`,
       icon: "cube-outline" as const,
       href: "/(tabs)/inventory" as Href,
       colors: cards.inventory,
@@ -115,10 +138,10 @@ export default function DashboardScreen() {
     {
       key: "lowstock",
       label: "Low Stock",
-      desc: `${inventoryStats.lowStockCount} items below threshold`,
+      desc: `${inventoryStats?.lowStockCount ?? 0} items below threshold`,
       icon: "warning-outline" as const,
-      iconBg: inventoryStats.lowStockCount > 0 ? "#F59E0B" : theme.primary,
-      badge: inventoryStats.lowStockCount > 0 ? inventoryStats.lowStockCount : undefined,
+      iconBg: (inventoryStats?.lowStockCount ?? 0) > 0 ? "#F59E0B" : theme.primary,
+      badge: (inventoryStats?.lowStockCount ?? 0) > 0 ? inventoryStats?.lowStockCount : undefined,
       href: "/(tabs)/inventory" as Href,
     },
     {
@@ -166,24 +189,32 @@ export default function DashboardScreen() {
               {firstName}
             </ThemedText>
           </View>
-          <Pressable
-            onPress={() => router.push("/profile")}
-            style={[styles.avatar, { backgroundColor: theme.primaryLight }]}
-          >
-            <ThemedText style={[styles.avatarLetter, { color: theme.primary }]}>
-              {firstName[0]?.toUpperCase() ?? "U"}
-            </ThemedText>
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable
+              onPress={() => router.push("/settings")}
+              style={[styles.settingsBtn, { backgroundColor: theme.surface, borderColor: theme.border }]}
+            >
+              <Ionicons name="settings-outline" size={20} color={theme.text} />
+            </Pressable>
+            <Pressable
+              onPress={() => router.push("/profile")}
+              style={[styles.avatar, { backgroundColor: theme.primaryLight }]}
+            >
+              <ThemedText style={[styles.avatarLetter, { color: theme.primary }]}>
+                {firstName[0]?.toUpperCase() ?? "U"}
+              </ThemedText>
+            </Pressable>
+          </View>
         </View>
 
         <View style={[styles.statsStrip, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <StatPill label="SKUs" value={inventoryStats.totalSkus} icon="layers-outline" theme={theme} />
+          <StatPill label="SKUs" value={inventoryStats?.totalSkus ?? 0} icon="layers-outline" theme={theme} />
           <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
-          <StatPill label="Units" value={inventoryStats.totalUnits} icon="cube-outline" theme={theme} />
+          <StatPill label="Units" value={inventoryStats?.totalUnits ?? 0} icon="cube-outline" theme={theme} />
           <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
-          <StatPill label="Expiring" value={inventoryStats.expiringSoonCount} icon="time-outline" theme={theme} highlight={inventoryStats.expiringSoonCount > 0} />
+          <StatPill label="Expiring" value={inventoryStats?.expiringSoonCount ?? 0} icon="time-outline" theme={theme} highlight={(inventoryStats?.expiringSoonCount ?? 0) > 0} />
           <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
-          <StatPill label="Out of Stock" value={inventoryStats.outOfStockCount} icon="close-circle-outline" theme={theme} highlight={inventoryStats.outOfStockCount > 0} />
+          <StatPill label="Out of Stock" value={inventoryStats?.outOfStockCount ?? 0} icon="close-circle-outline" theme={theme} highlight={(inventoryStats?.outOfStockCount ?? 0) > 0} />
         </View>
 
         <ThemedText style={[styles.sectionLabel, { color: theme.subtext }]}>
@@ -304,6 +335,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
   greeting: { fontSize: 14, marginBottom: 2 },
   name: { fontSize: 28, letterSpacing: -0.5 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 12 },
+  settingsBtn: { width: 42, height: 42, borderRadius: 12, borderWidth: 1, justifyContent: "center", alignItems: "center" },
   avatar: { width: 46, height: 46, borderRadius: 23, justifyContent: "center", alignItems: "center" },
   avatarLetter: { fontSize: 18 },
   statsStrip: { flexDirection: "row", borderRadius: 18, borderWidth: 1, paddingVertical: 14, paddingHorizontal: 8, marginBottom: 28, alignItems: "center" },

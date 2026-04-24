@@ -4,9 +4,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    Pressable,
-    StyleSheet,
-    View
+  Pressable,
+  StyleSheet,
+  View
 } from "react-native";
 import { AIOnboardingModal } from "../components/AIOnboardingModal";
 import { ThemedText } from '../components/ThemedText';
@@ -83,7 +83,7 @@ export default function WelcomeScreen() {
     if (role === 'admin') {
       router.push("/admin/inventory" as any);
     } else {
-      router.push("inventory/(tabs)" as any);
+      router.push("(tabs)/inventory" as any);
     }
   };
 
