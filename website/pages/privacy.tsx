@@ -1,5 +1,4 @@
 import Head from 'next/head';
-import Image from 'next/image';
 import Link from 'next/link';
 import ThemeApplier from '../components/ThemeApplier';
 
@@ -19,9 +18,7 @@ export default function Privacy() {
         <nav className="fixed top-0 left-0 right-0 z-50 glass-strong border-b" style={{ borderColor: 'var(--border)' }}>
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
-              <div className="relative w-8 h-8">
-                <Image src="/images/Logo.png" alt="Insightory" fill className="object-contain" />
-              </div>
+              <NavLogo size={8} />
               <span className="font-bold text-lg" style={{ color: 'var(--text)' }}>
                 Insight<span className="gradient-text">ory</span>
               </span>

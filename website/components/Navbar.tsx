@@ -127,7 +127,12 @@ export default function Navbar() {
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
           <div className="relative w-9 h-9">
-            <Image src="/images/Logo.png" alt="Insightory" fill className="object-contain" />
+            <Image
+              src={isDark ? '/images/Logo.png' : '/images/Logo_Light.png'}
+              alt="Insightory"
+              fill
+              className="object-contain"
+            />
           </div>
           <span className="font-bold text-xl tracking-tight" style={{ color: 'var(--text)' }}>
             Insight<span className="gradient-text">ory</span>

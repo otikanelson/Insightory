@@ -47,7 +47,7 @@ export const Colors = {
   },
 } as const;
 
-export type Theme = typeof Colors.light;
+export type Theme = typeof Colors.light | typeof Colors.dark;
 
 type ThemeContextType = {
   theme: Theme;
