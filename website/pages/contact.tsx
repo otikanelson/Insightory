@@ -26,18 +26,18 @@ export default function Contact() {
         <title>Contact Us — Insightory</title>
         <meta name="description" content="Get in touch with the Insightory team" />
       </Head>
+      <ThemeApplier />
 
-      <div className="min-h-screen" style={{ background: '#050a14' }}>
-        {/* Nav */}
-        <nav className="fixed top-0 left-0 right-0 z-50 glass-strong border-b border-white/5">
+      <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
+        <nav className="fixed top-0 left-0 right-0 z-50 glass-strong border-b" style={{ borderColor: 'var(--border)' }}>
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <div className="relative w-8 h-8">
                 <Image src="/images/Logo.png" alt="Insightory" fill className="object-contain" />
               </div>
-              <span className="text-white font-bold text-lg">Insight<span className="gradient-text">ory</span></span>
+              <span className="font-bold text-lg" style={{ color: 'var(--text)' }}>Insight<span className="gradient-text">ory</span></span>
             </Link>
-            <Link href="/" className="text-white/60 hover:text-white text-sm transition-colors duration-200 flex items-center gap-2">
+            <Link href="/" className="text-sm transition-colors duration-200 flex items-center gap-2" style={{ color: 'var(--subtext)' }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
               Back to Home
             </Link>
@@ -47,13 +47,14 @@ export default function Contact() {
         <div className="max-w-6xl mx-auto px-6 pt-32 pb-24">
           {/* Header */}
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 glass px-3 py-1.5 rounded-full text-xs text-brand-400 font-semibold mb-6 border border-brand-500/20">
+            <div className="inline-flex items-center gap-2 glass px-3 py-1.5 rounded-full text-xs font-semibold mb-6 border"
+              style={{ color: 'var(--primary)', borderColor: 'color-mix(in srgb, var(--primary) 20%, transparent)' }}>
               We'd love to hear from you
             </div>
-            <h1 className="text-4xl md:text-6xl font-black text-white mb-4">
+            <h1 className="text-4xl md:text-6xl font-black mb-4" style={{ color: 'var(--text)' }}>
               Get in <span className="gradient-text">touch</span>
             </h1>
-            <p className="text-white/50 text-lg max-w-xl mx-auto">
+            <p className="text-lg max-w-xl mx-auto" style={{ color: 'var(--subtext)' }}>
               Have a question, feedback, or need support? Our team typically responds within 24 hours.
             </p>
           </div>
@@ -88,15 +89,15 @@ export default function Contact() {
                   className="glass-card p-6 flex items-start gap-5 feature-card group"
                 >
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110"
-                    style={{ background: 'linear-gradient(135deg, rgba(42,163,245,0.15), rgba(42,163,245,0.05))', border: '1px solid rgba(42,163,245,0.2)', color: '#2aa3f5' }}>
+                    style={{ background: 'color-mix(in srgb, var(--primary) 15%, transparent)', border: '1px solid color-mix(in srgb, var(--primary) 20%, transparent)', color: 'var(--primary)' }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                       {c.icon}
                       {c.icon2}
                     </svg>
                   </div>
                   <div>
-                    <div className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-1">{c.title}</div>
-                    <div className="text-white font-medium text-sm">{c.value}</div>
+                    <div className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--subtext)' }}>{c.title}</div>
+                    <div className="font-medium text-sm" style={{ color: 'var(--text)' }}>{c.value}</div>
                   </div>
                 </a>
               ))}
@@ -105,9 +106,9 @@ export default function Contact() {
               <div className="glass-card p-6">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                  <span className="text-white font-semibold text-sm">Typical response time</span>
+                  <span className="font-semibold text-sm" style={{ color: 'var(--text)' }}>Typical response time</span>
                 </div>
-                <p className="text-white/40 text-sm">We respond to all inquiries within <span className="text-brand-400 font-semibold">24 hours</span> on business days.</p>
+                <p className="text-sm" style={{ color: 'var(--subtext)' }}>We respond to all inquiries within <span className="font-semibold" style={{ color: 'var(--primary)' }}>24 hours</span> on business days.</p>
               </div>
             </div>
 
@@ -115,19 +116,16 @@ export default function Contact() {
             <div className="lg:col-span-3">
               {sent ? (
                 <div className="glass-card p-12 text-center h-full flex flex-col items-center justify-center gap-6">
-                  <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.05))', border: '1px solid rgba(16,185,129,0.3)' }}>
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5">
+                  <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--success) 20%, transparent)', border: '1px solid color-mix(in srgb, var(--success) 30%, transparent)' }}>
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" strokeWidth="2.5" style={{ stroke: 'var(--success)' }}>
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-white text-2xl font-bold mb-2">Message sent!</h3>
-                    <p className="text-white/50">Thanks for reaching out. We'll get back to you within 24 hours.</p>
+                    <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--text)' }}>Message sent!</h3>
+                    <p style={{ color: 'var(--subtext)' }}>Thanks for reaching out. We'll get back to you within 24 hours.</p>
                   </div>
-                  <button
-                    onClick={() => setSent(false)}
-                    className="text-brand-400 hover:text-brand-300 text-sm transition-colors duration-200"
-                  >
+                  <button onClick={() => setSent(false)} className="text-sm transition-colors duration-200" style={{ color: 'var(--primary)' }}>
                     Send another message
                   </button>
                 </div>
@@ -135,60 +133,44 @@ export default function Contact() {
                 <form onSubmit={handleSubmit} className="glass-card p-8 flex flex-col gap-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-white/60 text-sm font-medium mb-2">Name</label>
-                      <input
-                        type="text"
-                        required
-                        value={form.name}
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--subtext)' }}>Name</label>
+                      <input type="text" required value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
                         placeholder="Your name"
-                        className="w-full px-4 py-3 rounded-xl text-white text-sm placeholder-white/20 outline-none transition-all duration-200 focus:border-brand-500/50"
-                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-                      />
+                        className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
+                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }} />
                     </div>
                     <div>
-                      <label className="block text-white/60 text-sm font-medium mb-2">Email</label>
-                      <input
-                        type="email"
-                        required
-                        value={form.email}
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--subtext)' }}>Email</label>
+                      <input type="email" required value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
                         placeholder="you@example.com"
-                        className="w-full px-4 py-3 rounded-xl text-white text-sm placeholder-white/20 outline-none transition-all duration-200 focus:border-brand-500/50"
-                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-                      />
+                        className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
+                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }} />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-white/60 text-sm font-medium mb-2">Subject</label>
-                    <select
-                      value={form.subject}
-                      onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                      required
-                      className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none transition-all duration-200"
-                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: form.subject ? 'white' : 'rgba(255,255,255,0.2)' }}
-                    >
-                      <option value="" disabled style={{ background: '#0a0f1e' }}>Select a subject</option>
-                      <option value="support" style={{ background: '#0a0f1e' }}>Technical Support</option>
-                      <option value="billing" style={{ background: '#0a0f1e' }}>Billing & Subscriptions</option>
-                      <option value="feature" style={{ background: '#0a0f1e' }}>Feature Request</option>
-                      <option value="partnership" style={{ background: '#0a0f1e' }}>Partnership</option>
-                      <option value="other" style={{ background: '#0a0f1e' }}>Other</option>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--subtext)' }}>Subject</label>
+                    <select value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} required
+                      className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
+                      style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: form.subject ? 'var(--text)' : 'var(--subtext)' }}>
+                      <option value="" disabled style={{ background: 'var(--surface)' }}>Select a subject</option>
+                      <option value="support"     style={{ background: 'var(--surface)' }}>Technical Support</option>
+                      <option value="billing"     style={{ background: 'var(--surface)' }}>Billing & Subscriptions</option>
+                      <option value="feature"     style={{ background: 'var(--surface)' }}>Feature Request</option>
+                      <option value="partnership" style={{ background: 'var(--surface)' }}>Partnership</option>
+                      <option value="other"       style={{ background: 'var(--surface)' }}>Other</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-white/60 text-sm font-medium mb-2">Message</label>
-                    <textarea
-                      required
-                      rows={6}
-                      value={form.message}
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--subtext)' }}>Message</label>
+                    <textarea required rows={6} value={form.message}
                       onChange={(e) => setForm({ ...form, message: e.target.value })}
                       placeholder="Tell us how we can help..."
-                      className="w-full px-4 py-3 rounded-xl text-white text-sm placeholder-white/20 outline-none transition-all duration-200 resize-none"
-                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-                    />
+                      className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200 resize-none"
+                      style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }} />
                   </div>
 
                   <button
@@ -217,13 +199,12 @@ export default function Contact() {
             </div>
           </div>
 
-          {/* Back to top */}
           <div className="mt-16 flex items-center justify-between">
-            <Link href="/" className="text-white/40 hover:text-white text-sm transition-colors duration-200 flex items-center gap-2">
+            <Link href="/" className="text-sm transition-colors duration-200 flex items-center gap-2" style={{ color: 'var(--subtext)' }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
               Back to Home
             </Link>
-            <button onClick={scrollToTop} className="text-white/40 hover:text-brand-400 text-sm transition-colors duration-200 flex items-center gap-2">
+            <button onClick={scrollToTop} className="text-sm transition-colors duration-200 flex items-center gap-2" style={{ color: 'var(--subtext)' }}>
               Back to top
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
             </button>

@@ -76,17 +76,17 @@ export default function Screenshots() {
   }, []);
 
   return (
-    <section ref={sectionRef} id="screenshots" className="relative py-32 px-6 overflow-hidden">
-      <div className="orb" style={{ width: 500, height: 500, left: '50%', top: '50%', transform: 'translate(-50%,-50%)', background: 'radial-gradient(circle, rgba(124,58,237,0.07) 0%, transparent 70%)' }} />
+    <section ref={sectionRef} id="screenshots" className="relative py-32 px-6 overflow-hidden" style={{ background: 'var(--bg)' }}>
+      <div className="orb" style={{ width: 500, height: 500, left: '50%', top: '50%', transform: 'translate(-50%,-50%)', background: 'radial-gradient(circle, color-mix(in srgb, var(--gradient2) 7%, transparent) 0%, transparent 70%)' }} />
 
       <div className="max-w-7xl mx-auto">
         {/* Title */}
         <div ref={titleRef} className="text-center mb-20">
-          <p className="text-brand-400 text-sm font-semibold uppercase tracking-widest mb-4">See it in action</p>
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-6">
+          <p className="text-sm font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--primary)' }}>See it in action</p>
+          <h2 className="text-4xl md:text-6xl font-black mb-6" style={{ color: 'var(--text)' }}>
             Beautiful by <span className="gradient-text">design</span>
           </h2>
-          <p className="text-white/50 text-lg max-w-xl mx-auto">
+          <p className="text-lg max-w-xl mx-auto" style={{ color: 'var(--subtext)' }}>
             Every screen crafted for clarity and speed. Inventory management has never looked this good.
           </p>
         </div>
@@ -128,8 +128,8 @@ export default function Screenshots() {
                 <span className="w-1.5 h-1.5 rounded-full bg-brand-400" />
                 {screens[active].label}
               </div>
-              <h3 className="text-white text-3xl font-bold mb-3">{screens[active].label} View</h3>
-              <p className="text-white/50 text-base leading-relaxed">{screens[active].desc}</p>
+              <h3 className="text-3xl font-bold mb-3" style={{ color: 'var(--text)' }}>{screens[active].label} View</h3>
+              <p className="text-base leading-relaxed" style={{ color: 'var(--subtext)' }}>{screens[active].desc}</p>
             </div>
 
             {/* Tab buttons */}

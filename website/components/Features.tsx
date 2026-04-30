@@ -118,19 +118,19 @@ export default function Features() {
   }, []);
 
   return (
-    <section ref={sectionRef} id="features" className="relative py-32 px-6">
+    <section ref={sectionRef} id="features" className="relative py-32 px-6" style={{ background: 'var(--bg)' }}>
       {/* Background orbs */}
-      <div className="orb" style={{ width: 400, height: 400, left: '-5%', top: '20%', background: 'radial-gradient(circle, rgba(42,163,245,0.06) 0%, transparent 70%)' }} />
-      <div className="orb" style={{ width: 350, height: 350, right: '-5%', bottom: '10%', background: 'radial-gradient(circle, rgba(124,58,237,0.06) 0%, transparent 70%)' }} />
+      <div className="orb" style={{ width: 400, height: 400, left: '-5%', top: '20%', background: 'radial-gradient(circle, color-mix(in srgb, var(--primary) 6%, transparent) 0%, transparent 70%)' }} />
+      <div className="orb" style={{ width: 350, height: 350, right: '-5%', bottom: '10%', background: 'radial-gradient(circle, color-mix(in srgb, var(--gradient2) 6%, transparent) 0%, transparent 70%)' }} />
 
       <div className="max-w-7xl mx-auto">
         {/* Title */}
         <div ref={titleRef} className="text-center mb-20">
-          <p className="text-brand-400 text-sm font-semibold uppercase tracking-widest mb-4">Everything you need</p>
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-6">
+          <p className="text-sm font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--primary)' }}>Everything you need</p>
+          <h2 className="text-4xl md:text-6xl font-black mb-6" style={{ color: 'var(--text)' }}>
             Built for modern <span className="gradient-text">retail</span>
           </h2>
-          <p className="text-white/50 text-lg max-w-2xl mx-auto">
+          <p className="text-lg max-w-2xl mx-auto" style={{ color: 'var(--subtext)' }}>
             From corner stores to multi-location chains — Insightory scales with your business and keeps your inventory under control.
           </p>
         </div>
@@ -154,8 +154,8 @@ export default function Features() {
                 {f.icon}
               </div>
 
-              <h3 className="text-white font-bold text-xl mb-3">{f.title}</h3>
-              <p className="text-white/50 text-sm leading-relaxed">{f.desc}</p>
+              <h3 className="font-bold text-xl mb-3" style={{ color: 'var(--text)' }}>{f.title}</h3>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--subtext)' }}>{f.desc}</p>
 
               {/* Bottom accent line */}
               <div

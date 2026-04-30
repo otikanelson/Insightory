@@ -1,14 +1,13 @@
 'use client';
 import Image from 'next/image';
-import Link from 'next/link';
 
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
 export default function Footer() {
   return (
-    <footer className="relative border-t border-white/5 pt-20 pb-10 px-6 overflow-hidden">
+    <footer className="relative border-t pt-20 pb-10 px-6 overflow-hidden" style={{ background: 'var(--bg)', borderColor: 'var(--border)' }}>
       {/* Subtle glow */}
-      <div className="orb" style={{ width: 400, height: 200, left: '50%', top: 0, transform: 'translateX(-50%)', background: 'radial-gradient(ellipse, rgba(42,163,245,0.05) 0%, transparent 70%)' }} />
+      <div className="orb" style={{ width: 400, height: 200, left: '50%', top: 0, transform: 'translateX(-50%)', background: 'radial-gradient(ellipse, color-mix(in srgb, var(--primary) 5%, transparent) 0%, transparent 70%)' }} />
 
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
@@ -18,11 +17,11 @@ export default function Footer() {
               <div className="relative w-9 h-9">
                 <Image src="/images/Logo.png" alt="Insightory" fill className="object-contain" />
               </div>
-              <span className="text-white font-bold text-xl tracking-tight">
+              <span className="font-bold text-xl tracking-tight" style={{ color: 'var(--text)' }}>
                 Insight<span className="gradient-text">ory</span>
               </span>
             </div>
-            <p className="text-white/40 text-sm leading-relaxed max-w-xs mb-6">
+            <p className="text-sm leading-relaxed max-w-xs mb-6" style={{ color: 'var(--subtext)' }}>
               Smart inventory management for modern retail. Track stock, predict demand, and grow your business with confidence.
             </p>
             {/* Social */}
@@ -48,26 +47,26 @@ export default function Footer() {
 
           {/* Product */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-5 uppercase tracking-wider">Product</h4>
+            <h4 className="font-semibold text-sm mb-5 uppercase tracking-wider" style={{ color: 'var(--text)' }}>Product</h4>
             <ul className="flex flex-col gap-3 list-none">
               {[
-                { label: 'Features', href: '/#features' },
+                { label: 'Features',    href: '/#features' },
                 { label: 'Screenshots', href: '/#screenshots' },
-                { label: 'Download', href: '/#download' },
-                { label: 'About', href: '/#about' },
+                { label: 'Download',    href: '/#download' },
+                { label: 'About',       href: '/#about' },
               ].map((l) => (
                 <li key={l.label}>
-                  <a
-                    href={l.href}
+                  <a href={l.href}
                     onClick={(e) => {
                       if (l.href.startsWith('/#')) {
                         e.preventDefault();
-                        const id = l.href.replace('/#', '#');
-                        document.querySelector(id)?.scrollIntoView({ behavior: 'smooth' });
+                        document.querySelector(l.href.replace('/#','#'))?.scrollIntoView({ behavior: 'smooth' });
                       }
                     }}
-                    className="text-white/40 hover:text-white text-sm transition-colors duration-200"
-                  >
+                    className="text-sm transition-colors duration-200"
+                    style={{ color: 'var(--subtext)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--subtext)')}>
                     {l.label}
                   </a>
                 </li>
@@ -77,25 +76,27 @@ export default function Footer() {
 
           {/* Legal */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-5 uppercase tracking-wider">Legal & Support</h4>
+            <h4 className="font-semibold text-sm mb-5 uppercase tracking-wider" style={{ color: 'var(--text)' }}>Legal & Support</h4>
             <ul className="flex flex-col gap-3 list-none">
+              {[
+                { label: 'Privacy Policy',    href: '/privacy' },
+                { label: 'Terms of Service',  href: '/terms' },
+                { label: 'Contact Us',        href: '/contact' },
+              ].map((l) => (
+                <li key={l.label}>
+                  <a href={l.href} className="text-sm transition-colors duration-200"
+                    style={{ color: 'var(--subtext)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--subtext)')}>
+                    {l.label}
+                  </a>
+                </li>
+              ))}
               <li>
-                <Link href="/privacy" className="text-white/40 hover:text-white text-sm transition-colors duration-200">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="/terms" className="text-white/40 hover:text-white text-sm transition-colors duration-200">
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-white/40 hover:text-white text-sm transition-colors duration-200">
-                  Contact Us
-                </Link>
-              </li>
-              <li>
-                <a href="mailto:support@insightory.app" className="text-white/40 hover:text-white text-sm transition-colors duration-200">
+                <a href="mailto:support@insightory.app" className="text-sm transition-colors duration-200"
+                  style={{ color: 'var(--subtext)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--subtext)')}>
                   support@insightory.app
                 </a>
               </li>
@@ -106,16 +107,18 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="divider mb-8" />
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-white/25 text-xs">
+          <p className="text-xs" style={{ color: 'var(--subtext)' }}>
             © {new Date().getFullYear()} Insightory. All rights reserved.
           </p>
-          <button
-            onClick={scrollToTop}
-            className="flex items-center gap-2 text-white/30 hover:text-brand-400 text-xs transition-colors duration-200 group"
-            aria-label="Scroll to top"
-          >
+          <button onClick={scrollToTop}
+            className="flex items-center gap-2 text-xs transition-colors duration-200 group"
+            style={{ color: 'var(--subtext)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--subtext)')}
+            aria-label="Scroll to top">
             Back to top
-            <span className="w-6 h-6 rounded-lg glass flex items-center justify-center group-hover:border-brand-500/30 transition-all duration-200 border border-white/5">
+            <span className="w-6 h-6 rounded-lg glass flex items-center justify-center border transition-all duration-200"
+              style={{ borderColor: 'var(--border)' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M12 19V5M5 12l7-7 7 7"/>
               </svg>

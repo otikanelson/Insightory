@@ -7,6 +7,7 @@ import Hero from '../components/Hero';
 import Navbar from '../components/Navbar';
 import Screenshots from '../components/Screenshots';
 import Stats from '../components/Stats';
+import ThemeApplier from '../components/ThemeApplier';
 
 export default function Home() {
   return (
@@ -20,7 +21,7 @@ export default function Home() {
         <meta property="og:type" content="website" />
         <link rel="icon" href="/images/favicon.png" />
       </Head>
-
+      <ThemeApplier />
       <main>
         <Navbar />
         <Hero />

@@ -80,7 +80,7 @@ export default function Stats() {
             <div className="text-4xl md:text-5xl font-black gradient-text mb-2">
               <Counter target={s.value} suffix={s.suffix} decimals={s.decimals} />
             </div>
-            <div className="text-white/50 text-sm font-medium">{s.label}</div>
+            <div className="text-sm font-medium" style={{ color: 'var(--subtext)' }}>{s.label}</div>
           </div>
         ))}
       </div>

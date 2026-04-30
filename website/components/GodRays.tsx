@@ -85,37 +85,13 @@ export default function GodRays() {
   return (
     <div ref={containerRef} className="god-rays" aria-hidden="true">
       {/* Ambient orbs */}
-      <div
-        className="orb"
-        style={{
-          width: 600,
-          height: 600,
-          left: '20%',
-          top: '-10%',
-          background: 'radial-gradient(circle, rgba(42,163,245,0.12) 0%, transparent 70%)',
-        }}
-      />
-      <div
-        className="orb"
-        style={{
-          width: 500,
-          height: 500,
-          right: '15%',
-          top: '5%',
-          background: 'radial-gradient(circle, rgba(124,58,237,0.1) 0%, transparent 70%)',
-        }}
-      />
-      <div
-        className="orb"
-        style={{
-          width: 300,
-          height: 300,
-          left: '50%',
-          top: '30%',
-          transform: 'translateX(-50%)',
-          background: 'radial-gradient(circle, rgba(42,163,245,0.06) 0%, transparent 70%)',
-        }}
-      />
+      <div className="orb" style={{ width: 600, height: 600, left: '20%', top: '-10%',
+        background: 'radial-gradient(circle, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 70%)' }} />
+      <div className="orb" style={{ width: 500, height: 500, right: '15%', top: '5%',
+        background: 'radial-gradient(circle, color-mix(in srgb, var(--gradient2) 10%, transparent) 0%, transparent 70%)' }} />
+      <div className="orb" style={{ width: 300, height: 300, left: '50%', top: '30%',
+        transform: 'translateX(-50%)',
+        background: 'radial-gradient(circle, color-mix(in srgb, var(--primary) 6%, transparent) 0%, transparent 70%)' }} />
 
       {/* Rays */}
       {RAYS.map((ray, i) => (
@@ -131,10 +107,10 @@ export default function GodRays() {
             background: `linear-gradient(
               to bottom,
               transparent 0%,
-              rgba(42,163,245,0.0) 5%,
-              rgba(42,163,245,0.22) 35%,
-              rgba(124,58,237,0.14) 65%,
-              rgba(42,163,245,0.05) 85%,
+              color-mix(in srgb, var(--primary) 0%, transparent) 5%,
+              color-mix(in srgb, var(--primary) 22%, transparent) 35%,
+              color-mix(in srgb, var(--gradient2) 14%, transparent) 65%,
+              color-mix(in srgb, var(--primary) 5%, transparent) 85%,
               transparent 100%
             )`,
             transform: `rotate(${ray.rotation}deg)`,
@@ -146,17 +122,11 @@ export default function GodRays() {
       ))}
 
       {/* Bottom fade */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '40%',
-          background: 'linear-gradient(to bottom, transparent, #050a14)',
-          pointerEvents: 'none',
-        }}
-      />
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: '40%',
+        background: 'linear-gradient(to bottom, transparent, var(--bg))',
+        pointerEvents: 'none',
+      }} />
     </div>
   );
 }

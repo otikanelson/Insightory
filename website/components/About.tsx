@@ -67,18 +67,18 @@ export default function About() {
   }, []);
 
   return (
-    <section ref={sectionRef} id="about" className="relative py-32 px-6 overflow-hidden">
-      <div className="orb" style={{ width: 400, height: 400, right: '5%', top: '20%', background: 'radial-gradient(circle, rgba(42,163,245,0.07) 0%, transparent 70%)' }} />
+    <section ref={sectionRef} id="about" className="relative py-32 px-6 overflow-hidden" style={{ background: 'var(--bg)' }}>
+      <div className="orb" style={{ width: 400, height: 400, right: '5%', top: '20%', background: 'radial-gradient(circle, color-mix(in srgb, var(--primary) 7%, transparent) 0%, transparent 70%)' }} />
 
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-20 items-center">
           {/* Left */}
           <div ref={titleRef} className="flex-1 max-w-lg">
-            <p className="text-brand-400 text-sm font-semibold uppercase tracking-widest mb-4">How it works</p>
-            <h2 className="text-4xl md:text-6xl font-black text-white mb-6 leading-tight">
+            <p className="text-sm font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--primary)' }}>How it works</p>
+            <h2 className="text-4xl md:text-6xl font-black mb-6 leading-tight" style={{ color: 'var(--text)' }}>
               Up and running in <span className="gradient-text">minutes</span>
             </h2>
-            <p className="text-white/50 text-lg leading-relaxed mb-8">
+            <p className="text-lg leading-relaxed mb-8" style={{ color: 'var(--subtext)' }}>
               Insightory is designed to get out of your way. No complex setup, no training required — just powerful inventory management that works from day one.
             </p>
 
@@ -89,10 +89,10 @@ export default function About() {
                   JM
                 </div>
                 <div>
-                  <p className="text-white/70 text-sm leading-relaxed italic mb-3">
+                  <p className="text-sm leading-relaxed italic mb-3" style={{ color: 'var(--subtext)' }}>
                     "Insightory cut our stockout incidents by 80% in the first month. The AI alerts are genuinely impressive."
                   </p>
-                  <div className="text-white/40 text-xs font-medium">James M. — Retail Store Owner</div>
+                  <div className="text-xs font-medium" style={{ color: 'var(--subtext)' }}>James M. — Retail Store Owner</div>
                 </div>
               </div>
             </div>
@@ -116,8 +116,8 @@ export default function About() {
                   {s.num}
                 </div>
                 <div>
-                  <h3 className="text-white font-bold text-lg mb-1">{s.title}</h3>
-                  <p className="text-white/50 text-sm leading-relaxed">{s.desc}</p>
+                  <h3 className="font-bold text-lg mb-1" style={{ color: 'var(--text)' }}>{s.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--subtext)' }}>{s.desc}</p>
                 </div>
               </div>
             ))}
