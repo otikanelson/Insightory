@@ -235,7 +235,7 @@ export default function AdminInventory() {
           <View style={styles.headerIcons}>
             <Pressable style={styles.headerIconBtn} onPress={cycleSortField}>
               <Ionicons
-                name={sortField === "risk" ? "alert-circle" : sortField === "velocity" ? "speedometer" : "document"}
+                name={sortField === "risk" ? "alert-circle" : sortField === "velocity" ? "speedometer" : sortField === "name" ? "text" : "cube"}
                 size={20}
                 color="#FFF"
               />

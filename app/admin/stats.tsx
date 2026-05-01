@@ -521,54 +521,85 @@ export default function AdminStats() {
           7-DAY SALES PREDICTION
         </ThemedText>
         <View style={styles.predictionContainer}>
-          {Array.from({ length: 7 }, (_, index) => {
-            // Use actual sales data for today and yesterday, then predict
-            let predictedValue;
-            if (index === 0) {
-              // Today's actual sales
-              predictedValue = (salesTrends?.summary?.totalSales || 26.95) / 1000;
-            } else if (index === 1) {
-              // Yesterday's sales (slightly higher)
-              predictedValue = ((salesTrends?.summary?.totalSales || 26.95) * 1.2) / 1000;
-            } else {
-              // Predicted future sales based on trend
-              const baseSales = (salesTrends?.summary?.totalSales || 26.95) / 1000;
-              const growthFactor = 1 + (index * 0.15); // Gradual growth prediction
-              predictedValue = baseSales * growthFactor;
+          {(() => {
+            // Build last 3 days of actual data from chartData
+            const chartData = salesTrends?.chartData || [];
+            const last3 = chartData.slice(-3);
+            
+            // Calculate average daily sales from available data
+            const avgDaily = chartData.length > 0
+              ? chartData.reduce((sum: number, d: any) => sum + d.sales, 0) / chartData.length
+              : 0;
+            
+            // Compute a simple linear trend slope from last 7 days
+            const recent = chartData.slice(-7);
+            let slope = 0;
+            if (recent.length >= 2) {
+              const n = recent.length;
+              const sumX = recent.reduce((_: any, __: any, i: number) => _ + i, 0);
+              const sumY = recent.reduce((s: number, d: any) => s + d.sales, 0);
+              const sumXY = recent.reduce((s: number, d: any, i: number) => s + i * d.sales, 0);
+              const sumX2 = recent.reduce((s: number, _: any, i: number) => s + i * i, 0);
+              slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
             }
-            
-            const maxValue = Math.max(50, predictedValue * 2); // Dynamic max for better scaling
-            const height = (predictedValue / maxValue) * 80;
-            const isToday = index === 0;
-            const isPrediction = index > 1;
-            
-            return (
-              <View key={index} style={styles.predictionBar}>
-                <ThemedText style={[styles.predictionValue, { color: theme.text }]}>
-                  ₦{predictedValue.toFixed(1)}k
-                </ThemedText>
-                <View
-                  style={[
-                    styles.predictionBarFill,
-                    {
-                      height: Math.max(height, 8),
-                      backgroundColor: isPrediction 
-                        ? theme.primary + "60" 
-                        : isToday 
-                        ? "#34C759" 
-                        : theme.primary,
-                      borderStyle: isPrediction ? 'dashed' : 'solid',
-                      borderWidth: isPrediction ? 1 : 0,
-                      borderColor: theme.primary,
-                    },
-                  ]}
-                />
-                <ThemedText style={[styles.predictionLabel, { color: theme.subtext }]}>
-                  {index === 0 ? 'Today' : `+${index}d`}
-                </ThemedText>
-              </View>
-            );
-          })}
+
+            // Build 7 bars: up to 3 actual days + 4 predicted days
+            const bars: { value: number; label: string; isActual: boolean }[] = [];
+
+            // Actual past days (oldest first)
+            last3.forEach((d: any, i: number) => {
+              const daysAgo = last3.length - 1 - i;
+              bars.push({
+                value: d.sales,
+                label: daysAgo === 0 ? 'Today' : `-${daysAgo}d`,
+                isActual: true,
+              });
+            });
+
+            // Predicted future days
+            const lastActual = last3.length > 0 ? last3[last3.length - 1].sales : avgDaily;
+            for (let i = 1; i <= 7 - last3.length; i++) {
+              const predicted = Math.max(0, lastActual + slope * i);
+              bars.push({ value: predicted, label: `+${i}d`, isActual: false });
+            }
+
+            const maxVal = Math.max(...bars.map(b => b.value), 1);
+
+            // Format value: show ₦X if < 1000, else ₦Xk
+            const fmt = (v: number) =>
+              v >= 1000 ? `₦${(v / 1000).toFixed(1)}k` : `₦${v.toFixed(0)}`;
+
+            return bars.map((bar, index) => {
+              const height = (bar.value / maxVal) * 80;
+              const isToday = bar.label === 'Today';
+              return (
+                <View key={index} style={styles.predictionBar}>
+                  <ThemedText style={[styles.predictionValue, { color: theme.text }]}>
+                    {fmt(bar.value)}
+                  </ThemedText>
+                  <View
+                    style={[
+                      styles.predictionBarFill,
+                      {
+                        height: Math.max(height, 6),
+                        backgroundColor: !bar.isActual
+                          ? theme.primary + "55"
+                          : isToday
+                          ? "#34C759"
+                          : theme.primary,
+                        borderStyle: !bar.isActual ? 'dashed' : 'solid',
+                        borderWidth: !bar.isActual ? 1 : 0,
+                        borderColor: theme.primary,
+                      },
+                    ]}
+                  />
+                  <ThemedText style={[styles.predictionLabel, { color: theme.subtext }]}>
+                    {bar.label}
+                  </ThemedText>
+                </View>
+              );
+            });
+          })()}
         </View>
         <View style={styles.predictionLegend}>
           <View style={styles.legendItem}>
@@ -609,7 +640,12 @@ export default function AdminStats() {
           • {summary?.mediumRiskProducts || 0} medium risk items to monitor
         </ThemedText>
         <ThemedText style={[styles.insightsText, { color: theme.text }]}>
-          • Today's sales: ₦{((salesTrends?.summary?.totalSales || 26.95) / 1000).toFixed(1)}k (projected: ₦{(((salesTrends?.summary?.totalSales || 26.95) * 1.5) / 1000).toFixed(1)}k)
+          • Today's sales: {(() => {
+            const todaySales = salesTrends?.chartData?.slice(-1)[0]?.sales ?? 0;
+            const projected = todaySales * 1.5;
+            const fmt = (v: number) => v >= 1000 ? `₦${(v / 1000).toFixed(1)}k` : `₦${v.toFixed(2)}`;
+            return `${fmt(todaySales)} (projected: ${fmt(projected)})`;
+          })()}
         </ThemedText>
         <ThemedText style={[styles.insightsText, { color: theme.text }]}>
           • 5 products expiring within 7 days - prioritize sales
@@ -825,7 +861,7 @@ export default function AdminStats() {
                 <View key={index} style={styles.barChartItem}>
                   <View style={styles.barContainer}>
                     <ThemedText style={[styles.barValue, { color: theme.text }]}>
-                      ₦{(cat.sales / 1000).toFixed(0)}k
+                      {cat.sales >= 1000 ? `₦${(cat.sales / 1000).toFixed(1)}k` : `₦${cat.sales.toFixed(0)}`}
                     </ThemedText>
                     <View
                       style={[

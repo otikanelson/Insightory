@@ -159,9 +159,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             storageItems.push(['admin_last_auth', Date.now().toString()]);
           }
 
+          // Cache the login PIN locally for offline PIN verification features
+          // (PIN update, security PIN reset, etc.)
+          storageItems.push(['admin_login_pin', pin]);
+
           // Persist permissions for staff users
           if (userData.role === 'staff' && userData.permissions) {
             storageItems.push(['auth_user_permissions', JSON.stringify(userData.permissions)]);
+          }
+
+          // Cache staff login PIN locally for offline PIN verification
+          if (userData.role === 'staff') {
+            storageItems.push(['staff_login_pin', pin]);
           }
 
           // Store auth data including store information
@@ -239,7 +248,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           try {
             if (userRole === 'admin') {
-              // Validate admin Login PIN
+              // Validate admin Login PIN from local cache
               const storedLoginPin = await AsyncStorage.getItem('admin_login_pin');
               if (pin === storedLoginPin) {
                 isValid = true;
@@ -248,7 +257,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 userName = storedName || 'Admin';
               }
             } else if (userRole === 'staff') {
-              // Validate staff PIN
+              // Validate staff PIN from local cache
               const staffPin = await AsyncStorage.getItem('staff_login_pin');
               const staffId = await AsyncStorage.getItem('auth_staff_id');
               const staffName = await AsyncStorage.getItem('auth_staff_name');
@@ -334,6 +343,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         'auth_store_name',
         'auth_user_permissions',
         'admin_last_auth',
+        'admin_login_pin',
+        'staff_login_pin',
       ]);
 
       setUser(null);

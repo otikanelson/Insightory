@@ -13,16 +13,16 @@ import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Animated,
-  Dimensions,
-  FlatList,
-  Image,
-  Modal,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View
+    ActivityIndicator,
+    Animated,
+    Dimensions,
+    FlatList,
+    Image,
+    Modal,
+    Pressable,
+    StyleSheet,
+    TextInput,
+    View
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { ThemedText } from '../../components/ThemedText';
@@ -47,6 +47,7 @@ export default function ScanScreen() {
   const { initialTab } = params;
   const { theme } = useTheme();
   const { role } = useAuth();
+  const modalToast = useModalToast();
 
   // Check feature access for scanning and other permissions
   const scanAccess = useFeatureAccess('scanProducts');
@@ -587,54 +588,27 @@ export default function ScanScreen() {
   const handlePinSubmit = async () => {
     try {
       const storedPin = await AsyncStorage.getItem('admin_security_pin');
-      
       if (!storedPin) {
-        Toast.show({ 
-          type: "error", 
-          text1: "Security PIN Not Set",
-          text2: "Please set up admin security PIN in settings first"
-        });
+        modalToast.show({ type: "error", title: "Security PIN Not Set", message: "Please set up admin security PIN in settings first" });
         setPinModal(false);
         setAdminPin("");
         setScanned(false);
         return;
       }
-
       if (adminPin === storedPin) {
-        // Correct PIN - update last auth time
         await AsyncStorage.setItem('admin_last_auth', Date.now().toString());
-        
         setPinModal(false);
         setAdminPin("");
         setScanned(false);
-        
-        // Turn off torch before navigation
         setTorch(false);
-        
-        // Navigate to add-products in REGISTRY mode
-        router.push({
-          pathname: "/add-products",
-          params: {
-            barcode: pendingData.barcode,
-            mode: "registry",
-          },
-        });
+        router.push({ pathname: "/add-products", params: { barcode: pendingData.barcode, mode: "registry" } });
       } else {
-        // Incorrect PIN
-        Toast.show({
-          type: "error",
-          text1: "Access Denied",
-          text2: "Incorrect Security PIN",
-        });
+        modalToast.show({ type: "error", title: "Access Denied", message: "Incorrect Security PIN" });
         setAdminPin("");
       }
     } catch (error) {
       console.error("PIN verification error:", error);
-      Toast.show({
-        type: "error",
-        text1: "Authentication Error",
-        text2: "Could not verify PIN",
-      });
+      modalToast.show({ type: "error", title: "Authentication Error", message: "Could not verify PIN" });
       setPinModal(false);
       setAdminPin("");
       setScanned(false);
@@ -666,36 +640,18 @@ export default function ScanScreen() {
 
   const removeFromCart = (productId: string) => {
     setCart((prevCart) => prevCart.filter((item) => item._id !== productId));
-    Toast.show({
-      type: "info",
-      text1: "Item Removed",
-      text2: "Product removed from cart",
-    });
+    modalToast.show({ type: "info", title: "Item Removed", message: "Product removed from cart" });
   };
 
-  const getTotalItems = () => {
-    return cart.reduce((sum, item) => sum + item.quantity, 0);
-  };
+  const getTotalItems = () => cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleCartDone = () => {
     if (cart.length === 0) {
-      Toast.show({
-        type: "info",
-        text1: "Empty Cart",
-        text2: "Please scan items to add to cart",
-      });
+      modalToast.show({ type: "info", title: "Empty Cart", message: "Please scan items to add to cart" });
       return;
     }
-
-    // Navigate to admin sales page with cart data
     setShowCartModal(false);
-    router.push({
-      pathname: "/admin/sales",
-      params: {
-        cartData: JSON.stringify(cart),
-        tab: "checkout",
-      },
-    });
+    router.push({ pathname: "/admin/sales", params: { cartData: JSON.stringify(cart), tab: "checkout" } });
   };
 
   const handleSecurityPINWarningClose = () => {
@@ -1077,6 +1033,7 @@ export default function ScanScreen() {
               </Pressable>
             </View>
           </View>
+          <ModalToast toast={modalToast} />
         </View>
       </Modal>
 
@@ -1139,6 +1096,7 @@ export default function ScanScreen() {
               </Pressable>
             </View>
           </View>
+          <ModalToast toast={modalToast} />
         </View>
       </Modal>
 
@@ -1275,6 +1233,7 @@ export default function ScanScreen() {
               </Pressable>
             )}
           </View>
+          <ModalToast toast={modalToast} />
         </View>
       </Modal>
 
@@ -1300,6 +1259,7 @@ export default function ScanScreen() {
               </Pressable>
             </View>
           </View>
+          <ModalToast toast={modalToast} />
         </View>
       </Modal>
 
@@ -1325,6 +1285,7 @@ export default function ScanScreen() {
               </Pressable>
             </View>
           </View>
+          <ModalToast toast={modalToast} />
         </View>
       </Modal>
 

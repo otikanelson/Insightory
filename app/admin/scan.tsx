@@ -42,6 +42,7 @@ export default function AdminScanScreen() {
   console.log('🎬 [ADMIN-SCAN] Component mounting...');
   const router = useRouter();
   const { theme } = useTheme();
+  const modalToast = useModalToast();
   const params = useLocalSearchParams();
   const [permission, requestPermission] = useCameraPermissions();
   console.log('📷 [ADMIN-SCAN] Camera permission state:', permission?.granted);
@@ -456,20 +457,12 @@ export default function AdminScanScreen() {
 
   const removeFromCart = (productId: string) => {
     setCart((prevCart) => prevCart.filter((item) => item._id !== productId));
-    Toast.show({
-      type: "info",
-      text1: "Item Removed",
-      text2: "Product removed from cart",
-    });
+    modalToast.show({ type: "info", title: "Item Removed", message: "Product removed from cart" });
   };
 
   const handleDone = () => {
     if (cart.length === 0) {
-      Toast.show({
-        type: "info",
-        text1: "Empty Cart",
-        text2: "Please scan items to add to cart",
-      });
+      modalToast.show({ type: "info", title: "Empty Cart", message: "Please scan items to add to cart" });
       return;
     }
 
@@ -861,6 +854,7 @@ export default function AdminScanScreen() {
               </Pressable>
             )}
           </View>
+          <ModalToast toast={modalToast} />
         </View>
       </Modal>
 

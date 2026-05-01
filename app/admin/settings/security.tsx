@@ -1,16 +1,18 @@
+import { ModalToast, useModalToast } from "@/components/ModalToast";
 import { PinResetModal } from "@/components/PinResetModal";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    TextInput,
-    View
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  TextInput,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -46,47 +48,8 @@ export default function SecuritySettingsScreen() {
   const [hasLoginPin, setHasLoginPin] = useState(false);
   const [hasSecurityPin, setHasSecurityPin] = useState(false);
 
-  // Debug function
-  const debugStorage = async () => {
-    try {
-      const keys = [
-        'admin_login_pin',
-        'admin_pin',
-        'admin_security_pin',
-        'auth_user_name',
-        'auth_user_role',
-        'pin_migration_completed'
-      ];
-      
-      const values = await AsyncStorage.multiGet(keys);
-      console.log('🔍 AsyncStorage Debug:', values);
-      
-      Toast.show({
-        type: 'info',
-        text1: 'Debug Info Logged',
-        text2: 'Check console for AsyncStorage values',
-      });
-    } catch (error) {
-      console.error('Debug error:', error);
-    }
-  };
-
-  // Fix Login PIN function
-  const fixLoginPin = async () => {
-    try {
-      // Prompt user to set a Login PIN since none exists
-      Toast.show({
-        type: 'warning',
-        text1: 'No Login PIN Found',
-        text2: 'Please set up your Login PIN first',
-      });
-      
-      // Open the Login PIN modal to set it up
-      setShowLoginPinModal(true);
-    } catch (error) {
-      console.error('Fix PIN error:', error);
-    }
-  };
+  // Toast that renders inside modals (above the native modal layer)
+  const modalToast = useModalToast();
 
   // Load settings on mount
   useEffect(() => {
@@ -95,12 +58,7 @@ export default function SecuritySettingsScreen() {
 
   const loadSettings = async () => {
     try {
-      // Check both new and old PIN keys for compatibility
-      let loginPin = await AsyncStorage.getItem('admin_login_pin');
-      if (!loginPin) {
-        loginPin = await AsyncStorage.getItem('admin_pin');
-      }
-      
+      const loginPin = await AsyncStorage.getItem('admin_login_pin');
       const securityPin = await AsyncStorage.getItem('admin_security_pin');
       const pinRequired = await AsyncStorage.getItem('admin_require_security_pin_delete');
       const logoutEnabled = await AsyncStorage.getItem('admin_auto_logout');
@@ -172,264 +130,138 @@ export default function SecuritySettingsScreen() {
 
   const handleLoginPinUpdate = async () => {
     try {
-      // Get stored Login PIN - check both new and old keys
-      let storedPin = await AsyncStorage.getItem('admin_login_pin');
-      if (!storedPin) {
-        storedPin = await AsyncStorage.getItem('admin_pin');
-      }
+      const storedPin = await AsyncStorage.getItem('admin_login_pin');
       
-      // If no PIN exists, this is first-time setup
       if (!storedPin) {
-        console.log('🔧 First-time Login PIN setup');
-        
-        // Validate new PIN format
-        if (newLoginPin.length !== 4 || !/^\d{4}$/.test(newLoginPin)) {
-          Toast.show({
-            type: 'error',
-            text1: 'Invalid PIN',
-            text2: 'Login PIN must be exactly 4 digits'
-          });
-          return;
-        }
-
-        // Validate confirmation
-        if (newLoginPin !== confirmLoginPin) {
-          Toast.show({
-            type: 'error',
-            text1: 'PIN Mismatch',
-            text2: 'New PIN and confirmation do not match'
-          });
-          return;
-        }
-
-        // Set up Login PIN for first time
-        await AsyncStorage.setItem('admin_login_pin', newLoginPin);
-        
-        // Clean up old keys
-        await AsyncStorage.removeItem('admin_pin');
-        
-        setHasLoginPin(true);
-        
-        Toast.show({
-          type: 'success',
-          text1: 'Login PIN Created',
-          text2: 'Your Login PIN has been set up successfully'
-        });
-
-        setShowLoginPinModal(false);
-        setOldLoginPin("");
-        setNewLoginPin("");
-        setConfirmLoginPin("");
+        modalToast.show({ type: 'error', title: 'Session Expired', message: 'Log out and log back in, then try again' });
         return;
       }
       
-      // Validate old PIN
       if (oldLoginPin !== storedPin) {
-        Toast.show({
-          type: 'error',
-          text1: 'Authentication Failed',
-          text2: 'Current Login PIN is incorrect'
-        });
+        modalToast.show({ type: 'error', title: 'Incorrect PIN', message: 'Current Login PIN is incorrect' });
         return;
       }
 
-      // Validate new PIN format
       if (newLoginPin.length !== 4 || !/^\d{4}$/.test(newLoginPin)) {
-        Toast.show({
-          type: 'error',
-          text1: 'Invalid PIN',
-          text2: 'Login PIN must be exactly 4 digits'
-        });
+        modalToast.show({ type: 'error', title: 'Invalid PIN', message: 'Login PIN must be exactly 4 digits' });
         return;
       }
 
-      // Validate confirmation
       if (newLoginPin !== confirmLoginPin) {
-        Toast.show({
-          type: 'error',
-          text1: 'PIN Mismatch',
-          text2: 'New PIN and confirmation do not match'
-        });
+        modalToast.show({ type: 'error', title: 'PIN Mismatch', message: 'New PIN and confirmation do not match' });
         return;
       }
 
-      // Update local storage - use new key format and remove old key
-      await AsyncStorage.setItem('admin_login_pin', newLoginPin);
-      await AsyncStorage.removeItem('admin_pin'); // Remove old key if it exists
-      
-      Toast.show({
-        type: 'success',
-        text1: 'Login PIN Updated',
-        text2: 'Your Login PIN has been changed successfully'
+      const token = await AsyncStorage.getItem('auth_session_token');
+      await axios.put(`${API_URL}/auth/admin/pin`, {
+        oldPin: oldLoginPin,
+        newPin: newLoginPin,
+        pinType: 'login',
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      setShowLoginPinModal(false);
-      setOldLoginPin("");
-      setNewLoginPin("");
-      setConfirmLoginPin("");
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Update Failed',
-        text2: 'Please try again'
-      });
+      await AsyncStorage.setItem('admin_login_pin', newLoginPin);
+      
+      modalToast.show({ type: 'success', title: 'Login PIN Updated', message: 'Your Login PIN has been changed' });
+      setTimeout(() => {
+        setShowLoginPinModal(false);
+        setOldLoginPin(""); setNewLoginPin(""); setConfirmLoginPin("");
+      }, 1200);
+    } catch (error: any) {
+      const msg = error?.response?.data?.error || 'Could not update PIN. Try again.';
+      modalToast.show({ type: 'error', title: 'Update Failed', message: msg });
     }
   };
 
   const handleSecurityPinFirstTimeSetup = async () => {
     try {
-      // Validate PIN format
       if (newSecurityPin.length !== 4 || !/^\d{4}$/.test(newSecurityPin)) {
-        Toast.show({
-          type: 'error',
-          text1: 'Invalid PIN',
-          text2: 'Security PIN must be exactly 4 digits'
-        });
+        modalToast.show({ type: 'error', title: 'Invalid PIN', message: 'Security PIN must be exactly 4 digits' });
         return;
       }
-
-      // Validate confirmation
       if (newSecurityPin !== confirmSecurityPin) {
-        Toast.show({
-          type: 'error',
-          text1: 'PIN Mismatch',
-          text2: 'PINs do not match'
-        });
+        modalToast.show({ type: 'error', title: 'PIN Mismatch', message: 'PINs do not match' });
         return;
       }
-
-      // Store Security PIN locally
+      const token = await AsyncStorage.getItem('auth_session_token');
+      const storedSecurity = await AsyncStorage.getItem('admin_security_pin');
+      await axios.put(`${API_URL}/auth/admin/pin`, {
+        oldPin: storedSecurity || '',
+        newPin: newSecurityPin,
+        pinType: 'security',
+      }, { headers: { Authorization: `Bearer ${token}` } });
       await AsyncStorage.setItem('admin_security_pin', newSecurityPin);
-      
       setHasSecurityPin(true);
-      
-      Toast.show({
-        type: 'success',
-        text1: 'Security PIN Created',
-        text2: 'Admin Security PIN has been set successfully'
-      });
-
-      setShowSecurityPinModal(false);
-      setOldSecurityPin("");
-      setNewSecurityPin("");
-      setConfirmSecurityPin("");
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Setup Failed',
-        text2: 'Please try again'
-      });
+      modalToast.show({ type: 'success', title: 'Security PIN Created', message: 'Admin Security PIN has been set' });
+      setTimeout(() => {
+        setShowSecurityPinModal(false);
+        setOldSecurityPin(""); setNewSecurityPin(""); setConfirmSecurityPin("");
+      }, 1200);
+    } catch (error: any) {
+      const msg = error?.response?.data?.error || 'Could not set PIN. Try again.';
+      modalToast.show({ type: 'error', title: 'Setup Failed', message: msg });
     }
   };
 
   const handleSecurityPinUpdate = async () => {
     try {
-      // Get stored Security PIN
       const storedPin = await AsyncStorage.getItem('admin_security_pin');
-      
       if (!storedPin) {
-        Toast.show({
-          type: 'error',
-          text1: 'No Security PIN Set',
-          text2: 'Please set up your Admin Security PIN first'
-        });
+        modalToast.show({ type: 'error', title: 'No Security PIN Set', message: 'Please set up your Admin Security PIN first' });
         return;
       }
-      
-      // Validate old PIN
       if (oldSecurityPin !== storedPin) {
-        Toast.show({
-          type: 'error',
-          text1: 'Authentication Failed',
-          text2: 'Current Security PIN is incorrect'
-        });
+        modalToast.show({ type: 'error', title: 'Incorrect PIN', message: 'Current Security PIN is incorrect' });
         return;
       }
-
-      // Validate new PIN format
       if (newSecurityPin.length !== 4 || !/^\d{4}$/.test(newSecurityPin)) {
-        Toast.show({
-          type: 'error',
-          text1: 'Invalid PIN',
-          text2: 'Security PIN must be exactly 4 digits'
-        });
+        modalToast.show({ type: 'error', title: 'Invalid PIN', message: 'Security PIN must be exactly 4 digits' });
         return;
       }
-
-      // Validate confirmation
       if (newSecurityPin !== confirmSecurityPin) {
-        Toast.show({
-          type: 'error',
-          text1: 'PIN Mismatch',
-          text2: 'New PIN and confirmation do not match'
-        });
+        modalToast.show({ type: 'error', title: 'PIN Mismatch', message: 'New PIN and confirmation do not match' });
         return;
       }
-
-      // Update local storage
+      const token = await AsyncStorage.getItem('auth_session_token');
+      await axios.put(`${API_URL}/auth/admin/pin`, {
+        oldPin: oldSecurityPin,
+        newPin: newSecurityPin,
+        pinType: 'security',
+      }, { headers: { Authorization: `Bearer ${token}` } });
       await AsyncStorage.setItem('admin_security_pin', newSecurityPin);
-      
-      Toast.show({
-        type: 'success',
-        text1: 'Security PIN Updated',
-        text2: 'Admin Security PIN has been changed successfully'
-      });
-
-      setShowSecurityPinModal(false);
-      setOldSecurityPin("");
-      setNewSecurityPin("");
-      setConfirmSecurityPin("");
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Update Failed',
-        text2: 'Please try again'
-      });
+      modalToast.show({ type: 'success', title: 'Security PIN Updated', message: 'Admin Security PIN has been changed' });
+      setTimeout(() => {
+        setShowSecurityPinModal(false);
+        setOldSecurityPin(""); setNewSecurityPin(""); setConfirmSecurityPin("");
+      }, 1200);
+    } catch (error: any) {
+      const msg = error?.response?.data?.error || 'Could not update PIN. Try again.';
+      modalToast.show({ type: 'error', title: 'Update Failed', message: msg });
     }
   };
 
   const handleRemoveSecurityPin = async () => {
     try {
       const storedPin = await AsyncStorage.getItem('admin_security_pin');
-      
       if (!storedPin) {
-        Toast.show({
-          type: 'error',
-          text1: 'No Security PIN Set',
-          text2: 'There is no Admin Security PIN to remove'
-        });
+        modalToast.show({ type: 'error', title: 'No Security PIN Set', message: 'There is no Admin Security PIN to remove' });
         setShowRemoveSecurityPinModal(false);
         return;
       }
-
       if (removeSecurityPinConfirm !== storedPin) {
-        Toast.show({
-          type: 'error',
-          text1: 'Authentication Failed',
-          text2: 'Incorrect PIN'
-        });
+        modalToast.show({ type: 'error', title: 'Incorrect PIN', message: 'The PIN you entered is wrong' });
         return;
       }
-
-      // Remove PIN from storage
       await AsyncStorage.removeItem('admin_security_pin');
-      
       setHasSecurityPin(false);
-      
-      Toast.show({
-        type: 'success',
-        text1: 'Security PIN Removed',
-        text2: 'Sensitive operations are now unrestricted'
-      });
-
-      setShowRemoveSecurityPinModal(false);
-      setRemoveSecurityPinConfirm("");
+      modalToast.show({ type: 'success', title: 'Security PIN Removed', message: 'Sensitive operations are now unrestricted' });
+      setTimeout(() => {
+        setShowRemoveSecurityPinModal(false);
+        setRemoveSecurityPinConfirm("");
+      }, 1200);
     } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Removal Failed',
-        text2: 'Please try again'
-      });
+      modalToast.show({ type: 'error', title: 'Removal Failed', message: 'Please try again' });
     }
   };
 
@@ -488,13 +320,7 @@ export default function SecuritySettingsScreen() {
               SECURITY
             </ThemedText>
           </View>
-          {/* Debug Button - Remove after debugging */}
-          <Pressable 
-            onPress={debugStorage}
-            style={[styles.backButton, { backgroundColor: '#FF3B30', borderWidth: 2, borderColor: '#FFF' }]}
-          >
-            <Ionicons name="bug" size={24} color="#FFF" />
-          </Pressable>
+          <View style={{ width: 44 }} />
         </View>
 
         {/* LOGIN PIN MANAGEMENT SECTION */}
@@ -744,6 +570,7 @@ export default function SecuritySettingsScreen() {
               </Pressable>
             </View>
           </View>
+          <ModalToast toast={modalToast} />
         </View>
       </Modal>
 
@@ -822,6 +649,7 @@ export default function SecuritySettingsScreen() {
               </Pressable>
             </View>
           </View>
+          <ModalToast toast={modalToast} />
         </View>
       </Modal>
 
@@ -869,6 +697,7 @@ export default function SecuritySettingsScreen() {
               </Pressable>
             </View>
           </View>
+          <ModalToast toast={modalToast} />
         </View>
       </Modal>
 

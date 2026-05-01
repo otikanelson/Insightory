@@ -1,4 +1,5 @@
 import { ConfirmationModal } from '@/components/ConfirmationModal';
+import { ModalToast, useModalToast } from '@/components/ModalToast';
 import { PinResetModal } from '@/components/PinResetModal';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,7 +17,6 @@ import {
     View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Toast from 'react-native-toast-message';
 import { ThemedText } from '../../../components/ThemedText';
 import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../context/ThemeContext';
@@ -44,6 +44,7 @@ export default function AdminProfileScreen() {
   const { user, role, logout } = useAuth();
   const insets = useSafeAreaInsets();
 
+  const modalToast = useModalToast();
   const [showPinModal, setShowPinModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -137,73 +138,32 @@ export default function AdminProfileScreen() {
 
   const handleUpdatePin = async () => {
     try {
-      // Validate new PIN format
       if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
-        Toast.show({
-          type: 'error',
-          text1: 'Invalid PIN',
-          text2: 'PIN must be exactly 4 digits',
-        });
+        modalToast.show({ type: 'error', title: 'Invalid PIN', message: 'PIN must be exactly 4 digits' });
         return;
       }
-
-      // Validate confirmation
       if (newPin !== confirmPin) {
-        Toast.show({
-          type: 'error',
-          text1: 'PIN Mismatch',
-          text2: 'New PIN and confirmation do not match',
-        });
+        modalToast.show({ type: 'error', title: 'PIN Mismatch', message: 'New PIN and confirmation do not match' });
         return;
       }
-
-      // Get stored Login PIN - check both new and old keys
-      let storedPin = await AsyncStorage.getItem('admin_login_pin');
+      const storedPin = await AsyncStorage.getItem('admin_login_pin');
       if (!storedPin) {
-        storedPin = await AsyncStorage.getItem('admin_pin');
-      }
-      
-      if (!storedPin) {
-        Toast.show({
-          type: 'error',
-          text1: 'No Login PIN Set',
-          text2: 'Please set up your Login PIN first',
-        });
+        modalToast.show({ type: 'error', title: 'Session Expired', message: 'Log out and log back in, then try again' });
         return;
       }
-
-      // Validate old PIN
       if (oldPin !== storedPin) {
-        Toast.show({
-          type: 'error',
-          text1: 'Authentication Failed',
-          text2: 'Current PIN is incorrect',
-        });
+        modalToast.show({ type: 'error', title: 'Incorrect PIN', message: 'Current PIN is incorrect' });
         return;
       }
-
-      // Update Login PIN - use the new key format
       await AsyncStorage.setItem('admin_login_pin', newPin);
-      
-      // Remove old PIN key if it exists
       await AsyncStorage.removeItem('admin_pin');
-
-      Toast.show({
-        type: 'success',
-        text1: 'Login PIN Updated',
-        text2: 'Your Login PIN has been changed successfully',
-      });
-
-      setShowPinModal(false);
-      setOldPin('');
-      setNewPin('');
-      setConfirmPin('');
+      modalToast.show({ type: 'success', title: 'Login PIN Updated', message: 'Your Login PIN has been changed' });
+      setTimeout(() => {
+        setShowPinModal(false);
+        setOldPin(''); setNewPin(''); setConfirmPin('');
+      }, 1200);
     } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Update Failed',
-        text2: 'Could not update PIN',
-      });
+      modalToast.show({ type: 'error', title: 'Update Failed', message: 'Could not update PIN' });
     }
   };
 
@@ -224,83 +184,37 @@ export default function AdminProfileScreen() {
   const confirmDeleteAccount = async () => {
     try {
       setIsDeleting(true);
-      
       if (!deleteSecurityPin || deleteSecurityPin.length !== 4) {
-        Toast.show({
-          type: 'error',
-          text1: 'Invalid PIN',
-          text2: 'Please enter your 4-digit Security PIN',
-        });
-        setIsDeleting(false);
-        return;
+        modalToast.show({ type: 'error', title: 'Invalid PIN', message: 'Please enter your 4-digit Security PIN' });
+        setIsDeleting(false); return;
       }
-
-      // Get stored Security PIN
       const storedSecurityPin = await AsyncStorage.getItem('admin_security_pin');
-      
       if (!storedSecurityPin) {
-        Toast.show({
-          type: 'error',
-          text1: 'No Security PIN',
-          text2: 'Please set up your Security PIN first',
-        });
-        setIsDeleting(false);
-        return;
+        modalToast.show({ type: 'error', title: 'No Security PIN', message: 'Please set up your Security PIN first' });
+        setIsDeleting(false); return;
       }
-      
       if (deleteSecurityPin !== storedSecurityPin) {
-        Toast.show({
-          type: 'error',
-          text1: 'Authentication Failed',
-          text2: 'Incorrect Security PIN',
-        });
-        setIsDeleting(false);
-        return;
+        modalToast.show({ type: 'error', title: 'Incorrect PIN', message: 'Incorrect Security PIN' });
+        setIsDeleting(false); return;
       }
-
-      // Call backend to delete account
       const API_URL = process.env.EXPO_PUBLIC_API_URL;
       const token = await AsyncStorage.getItem('auth_session_token');
-      
       const response = await fetch(`${API_URL}/auth/admin/account`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ pin: deleteSecurityPin }),
       });
-
       const data = await response.json();
-
       if (data.success) {
-        Toast.show({
-          type: 'success',
-          text1: 'Account Deleted',
-          text2: 'Your account, store, and all data have been permanently deleted',
-        });
-
-        // Clear all local data
+        modalToast.show({ type: 'success', title: 'Account Deleted', message: 'Your account and store have been permanently deleted' });
         await AsyncStorage.clear();
-
-        // Navigate to setup
-        setTimeout(() => {
-          router.replace('/auth/setup' as any);
-        }, 2000);
+        setTimeout(() => router.replace('/auth/setup' as any), 2000);
       } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Delete Failed',
-          text2: data.error || 'Could not delete account',
-        });
+        modalToast.show({ type: 'error', title: 'Delete Failed', message: data.error || 'Could not delete account' });
       }
     } catch (error) {
       console.error('Delete account error:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Could not delete account',
-      });
+      modalToast.show({ type: 'error', title: 'Error', message: 'Could not delete account' });
     } finally {
       setIsDeleting(false);
     }
@@ -591,6 +505,7 @@ export default function AdminProfileScreen() {
               </Pressable>
             </View>
           </View>
+          <ModalToast toast={modalToast} />
         </View>
       </Modal>
 
@@ -636,6 +551,7 @@ export default function AdminProfileScreen() {
               </Pressable>
             </View>
           </View>
+          <ModalToast toast={modalToast} />
         </View>
       </Modal>
 
@@ -680,11 +596,6 @@ export default function AdminProfileScreen() {
         onClose={() => setShowPinResetModal(false)}
         onSuccess={() => {
           setShowPinResetModal(false);
-          Toast.show({
-            type: 'info',
-            text1: 'Security PIN Removed',
-            text2: 'You can now access admin features without Security PIN',
-          });
         }}
       />
 
@@ -718,6 +629,7 @@ export default function AdminProfileScreen() {
               </View>
             )}
           </View>
+          <ModalToast toast={modalToast} />
         </View>
       </Modal>
     </View>

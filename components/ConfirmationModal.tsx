@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { ModalToast, useModalToast } from './ModalToast';
 import { ThemedText } from './ThemedText';
 
 interface ConfirmationModalProps {
@@ -43,17 +44,14 @@ export function ConfirmationModal({
   isLoading = false,
 }: ConfirmationModalProps) {
   const { theme } = useTheme();
+  const toast = useModalToast();
 
   const getIconAndColor = () => {
     switch (type) {
-      case 'danger':
-        return { icon: 'warning', color: '#FF3B30' };
-      case 'warning':
-        return { icon: 'alert-circle', color: '#FF9500' };
-      case 'info':
-        return { icon: 'information-circle', color: theme.primary };
-      default:
-        return { icon: 'alert-circle', color: '#FF9500' };
+      case 'danger':  return { icon: 'warning',            color: '#FF3B30' };
+      case 'warning': return { icon: 'alert-circle',       color: '#FF9500' };
+      case 'info':    return { icon: 'information-circle', color: theme.primary };
+      default:        return { icon: 'alert-circle',       color: '#FF9500' };
     }
   };
 
@@ -77,7 +75,7 @@ export function ConfirmationModal({
           <ThemedText style={[styles.modalTitle, { color: theme.text }]}>
             {title}
           </ThemedText>
-          
+
           <ThemedText style={[styles.modalMessage, { color: theme.subtext }]}>
             {message}
           </ThemedText>
@@ -88,14 +86,11 @@ export function ConfirmationModal({
                 Type "{storeName}" to confirm:
               </ThemedText>
               <TextInput
-                style={[
-                  styles.textInput,
-                  {
-                    backgroundColor: theme.background,
-                    borderColor: theme.border,
-                    color: theme.text,
-                  }
-                ]}
+                style={[styles.textInput, {
+                  backgroundColor: theme.background,
+                  borderColor: theme.border,
+                  color: theme.text,
+                }]}
                 value={storeNameValue}
                 onChangeText={onStoreNameChange}
                 placeholder={`Type ${storeName}`}
@@ -112,17 +107,14 @@ export function ConfirmationModal({
                 {pinPlaceholder}:
               </ThemedText>
               <TextInput
-                style={[
-                  styles.textInput,
-                  {
-                    backgroundColor: theme.background,
-                    borderColor: theme.border,
-                    color: theme.text,
-                    textAlign: 'center',
-                    fontSize: 18,
-                    letterSpacing: 8,
-                  }
-                ]}
+                style={[styles.textInput, {
+                  backgroundColor: theme.background,
+                  borderColor: theme.border,
+                  color: theme.text,
+                  textAlign: 'center',
+                  fontSize: 18,
+                  letterSpacing: 8,
+                }]}
                 value={pinValue}
                 onChangeText={onPinChange}
                 placeholder="••••"
@@ -136,43 +128,35 @@ export function ConfirmationModal({
 
           <View style={styles.modalActions}>
             <Pressable
-              style={[
-                styles.modalBtn,
-                { 
-                  backgroundColor: theme.background, 
-                  borderWidth: 1, 
-                  borderColor: theme.border 
-                }
-              ]}
+              style={[styles.modalBtn, {
+                backgroundColor: theme.background,
+                borderWidth: 1,
+                borderColor: theme.border,
+              }]}
               onPress={onClose}
               disabled={isLoading}
             >
-              <ThemedText style={{ color: theme.text }}>
-                {cancelText}
-              </ThemedText>
+              <ThemedText style={{ color: theme.text }}>{cancelText}</ThemedText>
             </Pressable>
-            
+
             <Pressable
-              style={[
-                styles.modalBtn,
-                { 
-                  backgroundColor: isConfirmDisabled() ? theme.border : color,
-                  opacity: isConfirmDisabled() ? 0.5 : 1,
-                }
-              ]}
+              style={[styles.modalBtn, {
+                backgroundColor: isConfirmDisabled() ? theme.border : color,
+                opacity: isConfirmDisabled() ? 0.5 : 1,
+              }]}
               onPress={onConfirm}
               disabled={isConfirmDisabled()}
             >
-              {isLoading ? (
-                <ThemedText style={{ color: '#FFF' }}>Loading...</ThemedText>
-              ) : (
-                <ThemedText style={{ color: '#FFF' }}>
-                  {confirmText}
-                </ThemedText>
-              )}
+              {isLoading
+                ? <ThemedText style={{ color: '#FFF' }}>Loading...</ThemedText>
+                : <ThemedText style={{ color: '#FFF' }}>{confirmText}</ThemedText>
+              }
             </Pressable>
           </View>
         </View>
+
+        {/* Toast rendered inside the Modal layer so it appears above the overlay */}
+        <ModalToast toast={toast} />
       </View>
     </Modal>
   );
@@ -185,8 +169,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    zIndex: 9999, // High z-index to appear above other elements
-    elevation: 1000, // High elevation for Android
   },
   modalContent: {
     width: '100%',
@@ -194,8 +176,6 @@ const styles = StyleSheet.create({
     padding: 30,
     borderRadius: 30,
     alignItems: 'center',
-    zIndex: 10000,
-    elevation: 1001,
   },
   modalIconBox: {
     width: 70,

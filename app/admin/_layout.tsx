@@ -1,3 +1,4 @@
+import { ModalToast, useModalToast } from "@/components/ModalToast";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
@@ -22,6 +23,7 @@ export default function AdminLayout() {
   const { theme } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const modalToast = useModalToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [showSetupModal, setShowSetupModal] = useState(false);
@@ -126,85 +128,48 @@ export default function AdminLayout() {
 
   const handlePinSubmit = async () => {
     try {
-      // Only admin users can access this dashboard
       const storedPin = await AsyncStorage.getItem("admin_security_pin");
-      
       if (pin === storedPin) {
         await AsyncStorage.setItem("admin_last_auth", Date.now().toString());
         setIsAuthenticated(true);
         setShowPinModal(false);
         setPin("");
       } else {
-        Toast.show({
-          type: "error",
-          text1: "Access Denied",
-          text2: "Incorrect Security PIN",
-        });
+        modalToast.show({ type: "error", title: "Access Denied", message: "Incorrect Security PIN" });
         setPin("");
       }
     } catch (error) {
       console.error('PIN Submit Error:', error);
-      Toast.show({
-        type: "error",
-        text1: "Authentication Error",
-        text2: "Could not verify PIN",
-      });
+      modalToast.show({ type: "error", title: "Authentication Error", message: "Could not verify PIN" });
     }
   };
 
   const handleFirstTimeSetup = async () => {
     try {
-      // Validate PIN format
       if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
-        Toast.show({
-          type: "error",
-          text1: "Invalid PIN",
-          text2: "PIN must be exactly 4 digits",
-        });
+        modalToast.show({ type: "error", title: "Invalid PIN", message: "PIN must be exactly 4 digits" });
         return;
       }
-
-      // Validate confirmation
       if (newPin !== confirmPin) {
-        Toast.show({
-          type: "error",
-          text1: "PIN Mismatch",
-          text2: "PINs do not match",
-        });
+        modalToast.show({ type: "error", title: "PIN Mismatch", message: "PINs do not match" });
         return;
       }
-
-      // Store new Security PIN
       await AsyncStorage.setItem("admin_security_pin", newPin);
       await AsyncStorage.setItem("admin_first_setup", "completed");
       await AsyncStorage.setItem("admin_last_auth", Date.now().toString());
-
       setHasPin(true);
       setShowSetupModal(false);
       setNewPin("");
       setConfirmPin("");
-
-      Toast.show({
-        type: "success",
-        text1: "Security PIN Created",
-        text2: "Admin dashboard is now secured",
-      });
+      modalToast.show({ type: "success", title: "Security PIN Created", message: "Admin dashboard is now secured" });
     } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Setup Failed",
-        text2: "Could not save Security PIN",
-      });
+      modalToast.show({ type: "error", title: "Setup Failed", message: "Could not save Security PIN" });
     }
   };
 
   const handleSkipSetup = () => {
     setShowSetupModal(false);
-    Toast.show({
-      type: "info",
-      text1: "Setup Skipped",
-      text2: "Please set your PIN in Settings for security",
-    });
+    Toast.show({ type: "info", text1: "Setup Skipped", text2: "Please set your PIN in Settings for security" });
   };
 
   const handleCancel = () => {
@@ -266,6 +231,7 @@ export default function AdminLayout() {
                 </Pressable>
               </View>
             </View>
+            <ModalToast toast={modalToast} />
           </View>
         </Modal>
 
@@ -494,6 +460,7 @@ export default function AdminLayout() {
               ⚠️ You can set this up later in Settings
             </ThemedText>
           </View>
+          <ModalToast toast={modalToast} />
         </View>
       </Modal>
       </View>

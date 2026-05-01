@@ -873,6 +873,116 @@ exports.recalculatePrediction = async (req, res) => {
 
 
 /**
+ * @desc    Get velocity-based 7-day sales predictions
+ * @route   GET /api/analytics/velocity-predictions
+ * @access  Admin
+ */
+exports.getVelocityPredictions = async (req, res) => {
+  try {
+    const storeId = req.user?.storeId;
+
+    if (!storeId && !req.user?.isAuthor) {
+      return res.status(400).json({ success: false, error: 'Store ID is required' });
+    }
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const matchQuery = { saleDate: { $gte: thirtyDaysAgo }, ...req.tenantFilter };
+
+    // Get per-product velocity: total units sold / 30 days
+    const productVelocities = await Sale.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: '$productId',
+          productName: { $first: '$productName' },
+          totalUnits: { $sum: '$quantitySold' },
+          totalRevenue: { $sum: '$totalAmount' },
+        },
+      },
+    ]);
+
+    if (productVelocities.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          dailyPredictions: Array(7).fill(0),
+          confidence: 'low',
+          message: 'No sales data available for predictions',
+          productBreakdown: [],
+        },
+      });
+    }
+
+    // Compute avg price and daily velocity per product
+    const productBreakdown = productVelocities.map((p) => {
+      const velocity = p.totalUnits / 30; // units per day
+      const avgPrice = p.totalRevenue / p.totalUnits;
+      return {
+        productId: p._id,
+        productName: p.productName,
+        velocity: Math.round(velocity * 100) / 100,
+        avgPrice: Math.round(avgPrice * 100) / 100,
+        dailyRevenue: velocity * avgPrice,
+      };
+    });
+
+    // Get actual daily sales for the last 7 days (for the "actual" portion of the chart)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const recentDailySales = await Sale.aggregate([
+      { $match: { saleDate: { $gte: sevenDaysAgo }, ...req.tenantFilter } },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$saleDate' } },
+          totalSales: { $sum: '$totalAmount' },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Build a map of date -> actual sales
+    const actualMap: Record<string, number> = {};
+    recentDailySales.forEach((d: any) => { actualMap[d._id] = d.totalSales; });
+
+    // Total predicted daily revenue = sum of (velocity × avgPrice) across all products
+    const totalDailyRevenue = productBreakdown.reduce((sum, p) => sum + p.dailyRevenue, 0);
+
+    // Build 7-day array: past 3 days actual + today actual + next 3 days predicted
+    const days: { date: string; value: number; isActual: boolean }[] = [];
+    for (let i = -3; i <= 3; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      const key = d.toISOString().split('T')[0];
+      const isActual = i <= 0;
+      days.push({
+        date: key,
+        value: isActual ? (actualMap[key] ?? 0) : totalDailyRevenue,
+        isActual,
+      });
+    }
+
+    const confidence =
+      productVelocities.length >= 5 ? 'high' : productVelocities.length >= 2 ? 'medium' : 'low';
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        days,
+        totalDailyRevenue: Math.round(totalDailyRevenue * 100) / 100,
+        confidence,
+        productBreakdown: productBreakdown.slice(0, 10), // top 10
+      },
+    });
+  } catch (error: any) {
+    console.error('Velocity Predictions Error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
  * @desc    Get TensorFlow-based sales predictions
  * @route   GET /api/analytics/tensorflow-predictions
  * @access  Admin

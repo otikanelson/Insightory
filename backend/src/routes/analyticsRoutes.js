@@ -24,6 +24,7 @@ const {
   markAllNotificationsAsRead,
   recalculatePrediction,
   getTensorFlowPredictions,
+  getVelocityPredictions,
   getAIStatus
 } = require('../controllers/analyticsController');
 
@@ -129,6 +130,11 @@ router.post('/recalculate/:productId', recalculatePrediction);
 // @desc    Get TensorFlow-based sales predictions
 // @access  Admin
 router.get('/tensorflow-predictions', getTensorFlowPredictions);
+
+// @route   GET /api/analytics/velocity-predictions
+// @desc    Get velocity-based 7-day sales predictions
+// @access  Admin
+router.get('/velocity-predictions', getVelocityPredictions);
 
 // @route   GET /api/analytics/ai-status
 // @desc    Get AI status for onboarding and indicators

@@ -137,15 +137,6 @@ export default function Hero() {
           ))}
         </div>
       </div>
-
-      {/* Scroll indicator */}
-      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-xs animate-bounce z-50"
-        style={{ color: 'var(--subtext)' }}>
-        <span className="px-3 py-1 rounded-full glass border" style={{ borderColor: 'var(--border)' }}>Scroll</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 5v14M5 12l7 7 7-7"/>
-        </svg>
-      </div>
     </section>
   );
 }
