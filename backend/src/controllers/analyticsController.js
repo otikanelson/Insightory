@@ -951,7 +951,7 @@ exports.getVelocityPredictions = async (req, res) => {
     const totalDailyRevenue = productBreakdown.reduce((sum, p) => sum + p.dailyRevenue, 0);
 
     // Build 7-day array: past 3 days actual + today actual + next 3 days predicted
-    const days: { date: string; value: number; isActual: boolean }[] = [];
+    const days = [];
     for (let i = -3; i <= 3; i++) {
       const d = new Date();
       d.setDate(d.getDate() + i);
@@ -959,7 +959,7 @@ exports.getVelocityPredictions = async (req, res) => {
       const isActual = i <= 0;
       days.push({
         date: key,
-        value: isActual ? (actualMap[key] ?? 0) : totalDailyRevenue,
+        value: isActual ? (actualMap[key] || 0) : totalDailyRevenue,
         isActual,
       });
     }
@@ -973,10 +973,10 @@ exports.getVelocityPredictions = async (req, res) => {
         days,
         totalDailyRevenue: Math.round(totalDailyRevenue * 100) / 100,
         confidence,
-        productBreakdown: productBreakdown.slice(0, 10), // top 10
+        productBreakdown: productBreakdown.slice(0, 10),
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Velocity Predictions Error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
