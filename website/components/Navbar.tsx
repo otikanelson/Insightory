@@ -128,7 +128,7 @@ export default function Navbar() {
         >
           <div className="relative w-9 h-9">
             <Image
-              src={isDark ? '/images/Logo.png' : '/images/Logo_Light.png'}
+              src={isDark ? '/images/icon.png' : '/images/icon_light.png'}
               alt="Insightory"
               fill
               className="object-contain"
