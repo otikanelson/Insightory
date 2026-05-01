@@ -243,6 +243,43 @@ body {
   box-shadow: 0 12px 32px color-mix(in srgb, var(--accent2) 20%, transparent);
 }
 
+/* ── Aurora card shimmer (applied to every other glass card) ── */
+.aurora-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.aurora-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(124, 111, 247, 0.12) 0%,
+    rgba(227, 43, 216, 0.08) 40%,
+    rgba(167, 139, 250, 0.10) 70%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+.aurora-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme="light"] .aurora-card::before {
+  background: linear-gradient(
+    135deg,
+    rgba(124, 111, 247, 0.09) 0%,
+    rgba(227, 43, 216, 0.06) 40%,
+    rgba(167, 139, 250, 0.08) 70%,
+    transparent 100%
+  );
+}
+
 /* ── Aurora ── */
 @keyframes aurora-1 {
   0%, 100% { transform: translate(0%, 0%) scale(1);   opacity: 0.55; }
@@ -262,12 +299,12 @@ body {
 .aurora-blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(72px);
+  filter: blur(50px);
   pointer-events: none;
 }
 
 [data-theme="light"] .aurora-blob {
-  opacity: 0.5;
+  opacity: 0.7;
 }
 
 /* ── Animations ── */

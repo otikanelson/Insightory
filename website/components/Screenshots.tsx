@@ -140,7 +140,7 @@ export default function Screenshots() {
                 <button
                   key={i}
                   onClick={() => switchScreen(i)}
-                  className={`relative rounded-2xl overflow-hidden transition-all duration-300 ${
+                  className={`relative rounded-2xl overflow-hidden transition-all duration-300${i % 2 === 0 ? ' aurora-card' : ''} ${
                     i === active
                       ? 'ring-2 ring-brand-400 scale-105'
                       : 'opacity-50 hover:opacity-80 hover:scale-102'

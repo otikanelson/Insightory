@@ -90,7 +90,7 @@ export default function Download() {
       <div className="max-w-7xl mx-auto">
         <div
           ref={cardRef}
-          className="relative rounded-3xl overflow-hidden"
+          className="relative rounded-3xl overflow-hidden aurora-card"
           style={{
             background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, transparent) 0%, color-mix(in srgb, var(--gradient2) 8%, transparent) 50%, var(--surface) 100%)',
             border: '1px solid color-mix(in srgb, var(--primary) 20%, transparent)',
@@ -145,8 +145,10 @@ export default function Download() {
 
                 {/* Google Play */}
                 <a
-                  href="#"
-                  className="dl-badge store-badge flex items-center gap-4 glass-strong px-6 py-4 rounded-2xl border border-white/10 hover:border-brand-500/40 transition-colors duration-300"
+                  href="https://play.google.com/store/apps/details?id=com.son_the_nel.Inventory"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="dl-badge store-badge aurora-card flex items-center gap-4 glass-strong px-6 py-4 rounded-2xl border border-white/10 hover:border-brand-500/40 transition-colors duration-300"
                   aria-label="Get it on Google Play"
                 >
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--text)' }}>

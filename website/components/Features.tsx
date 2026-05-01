@@ -140,7 +140,7 @@ export default function Features() {
           {features.map((f, i) => (
             <div
               key={i}
-              className="feat-card glass-card feature-card p-8 group"
+              className={`feat-card glass-card feature-card p-8 group${i % 2 === 0 ? ' aurora-card' : ''}`}
             >
               {/* Icon */}
               <div

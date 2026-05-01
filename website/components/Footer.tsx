@@ -7,9 +7,9 @@ export default function Footer() {
   return (
     <footer className="relative border-t pt-20 pb-10 px-6 overflow-hidden" style={{ background: 'var(--bg)', borderColor: 'var(--border)' }}>
       {/* Aurora */}
-      <div className="aurora-blob" style={{ width: 700, height: 320, left: '-5%',  top: '-80px', background: 'radial-gradient(ellipse, color-mix(in srgb, var(--gradient1) 45%, transparent) 0%, transparent 65%)', animation: 'aurora-1 14s ease-in-out infinite' }} />
-      <div className="aurora-blob" style={{ width: 600, height: 280, left: '30%',  top: '-60px', background: 'radial-gradient(ellipse, color-mix(in srgb, var(--accent2)   38%, transparent) 0%, transparent 65%)', animation: 'aurora-2 18s ease-in-out infinite' }} />
-      <div className="aurora-blob" style={{ width: 500, height: 260, right: '-5%', top: '-70px', background: 'radial-gradient(ellipse, color-mix(in srgb, var(--gradient2) 42%, transparent) 0%, transparent 65%)', animation: 'aurora-3 12s ease-in-out infinite' }} />
+      <div className="aurora-blob" style={{ width: 800, height: 400, left: '-10%', top: '-120px', background: 'radial-gradient(ellipse, rgba(124, 111, 247, 0.55) 0%, rgba(124, 111, 247, 0.15) 50%, transparent 70%)', animation: 'aurora-1 14s ease-in-out infinite' }} />
+      <div className="aurora-blob" style={{ width: 700, height: 350, left: '25%',  top: '-100px', background: 'radial-gradient(ellipse, rgba(227, 43, 216, 0.5)  0%, rgba(227, 43, 216, 0.12) 50%, transparent 70%)', animation: 'aurora-2 18s ease-in-out infinite' }} />
+      <div className="aurora-blob" style={{ width: 600, height: 300, right: '-8%', top: '-110px', background: 'radial-gradient(ellipse, rgba(167, 139, 250, 0.5)  0%, rgba(167, 139, 250, 0.12) 50%, transparent 70%)', animation: 'aurora-3 12s ease-in-out infinite' }} />
 
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
@@ -33,7 +33,7 @@ export default function Footer() {
               ].map((s) => (
                 <a
                   key={s.label}
-                  href="#"
+                  href="https://www.linkedin.com/in/otika-somtochukwu-0318622b2/"
                   aria-label={s.label}
                   className="w-9 h-9 rounded-xl glass flex items-center justify-center transition-all duration-200 border"
                   style={{ color: 'var(--subtext)', borderColor: 'var(--border)' }}

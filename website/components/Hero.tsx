@@ -5,18 +5,12 @@ import { useEffect, useRef } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import GodRays from './GodRays';
 
-const heroScreens = [
-  { light: '/images/dashboard.jpeg',  dark: '/images/dashboard_dark.jpeg',  alt: 'Dashboard',  rotate: '-6deg',  scale: 1,    z: 3, x: '-52%', y: '0%'   },
-  { light: '/images/inventory.jpeg',  dark: '/images/inventory_dark.jpeg',  alt: 'Inventory',  rotate: '3deg',   scale: 0.92, z: 2, x: '0%',   y: '-5%'  },
-  { light: '/images/analytics.jpeg',  dark: '/images/analytics_dark.jpeg',  alt: 'Analytics',  rotate: '-2deg',  scale: 0.88, z: 1, x: '50%',  y: '4%'   },
-];
-
 export default function Hero() {
   const sectionRef  = useRef<HTMLElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
   const subRef      = useRef<HTMLParagraphElement>(null);
   const ctasRef     = useRef<HTMLDivElement>(null);
-  const screensRef  = useRef<HTMLDivElement>(null);
+  const phoneRef    = useRef<HTMLDivElement>(null);
   const badgesRef   = useRef<HTMLDivElement>(null);
   const { isDark }  = useTheme();
 
@@ -30,23 +24,12 @@ export default function Hero() {
           { y: 0, opacity: 1, rotateX: 0, duration: 0.7, stagger: 0.08, ease: 'power3.out' }
         );
       }
-      tl.fromTo(subRef.current,    { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.3')
-        .fromTo(ctasRef.current,   { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.4')
-        .fromTo(screensRef.current,{ y: 60, opacity: 0, scale: 0.92 }, { y: 0, opacity: 1, scale: 1, duration: 1, ease: 'power3.out' }, '-=0.5')
-        .fromTo(badgesRef.current, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.4');
+      tl.fromTo(subRef.current,   { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.3')
+        .fromTo(ctasRef.current,  { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.4')
+        .fromTo(phoneRef.current, { y: 80, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 1, ease: 'power3.out' }, '-=0.6')
+        .fromTo(badgesRef.current,{ y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.4');
 
-      // Gentle independent float per card
-      const cards = screensRef.current?.querySelectorAll('.hero-screen');
-      cards?.forEach((card, i) => {
-        gsap.to(card, {
-          y: i % 2 === 0 ? -14 : 10,
-          duration: 3.5 + i * 0.7,
-          ease: 'sine.inOut',
-          yoyo: true,
-          repeat: -1,
-          delay: i * 0.5,
-        });
-      });
+      gsap.to(phoneRef.current, { y: -16, duration: 3.5, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: 2 });
     }, sectionRef);
     return () => ctx.revert();
   }, []);
@@ -77,7 +60,7 @@ export default function Hero() {
         <div className="mb-8 inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-sm font-medium border"
           style={{ color: 'var(--primary)', borderColor: 'color-mix(in srgb, var(--primary) 20%, transparent)' }}>
           <span className="w-2 h-2 rounded-full animate-pulse-slow" style={{ background: 'var(--primary)' }} />
-          Now available on <span style={{ opacity: 0.5 }}>iOS &</span> Android
+          Now available on <span style={{ opacity: 0.35 }}>iOS &</span> Android
         </div>
 
         {/* Headline */}
@@ -126,47 +109,23 @@ export default function Hero() {
           </a>
         </div>
 
-        {/* Screenshot stack */}
-        <div ref={screensRef} className="relative w-full max-w-3xl mx-auto" style={{ height: 420 }}>
-          {/* Glow behind the stack */}
-          <div className="absolute inset-0 pointer-events-none" style={{
-            background: 'radial-gradient(ellipse at center, color-mix(in srgb, var(--primary) 18%, transparent) 0%, color-mix(in srgb, var(--gradient2) 10%, transparent) 50%, transparent 70%)',
-            filter: 'blur(48px)',
-            transform: 'scale(1.2)',
+        {/* Phone mockup */}
+        <div ref={phoneRef} className="relative w-full max-w-xs mx-auto">
+          <div className="absolute inset-0 rounded-[44px]" style={{
+            background: 'radial-gradient(ellipse at center, color-mix(in srgb, var(--primary) 20%, transparent) 0%, color-mix(in srgb, var(--gradient2) 10%, transparent) 50%, transparent 70%)',
+            filter: 'blur(30px)', transform: 'scale(1.3)',
           }} />
-
-          {heroScreens.map((s, i) => (
-            <div
-              key={i}
-              className="hero-screen absolute rounded-3xl overflow-hidden border shadow-2xl"
-              style={{
-                width: 220,
-                height: 400,
-                top: '50%',
-                left: '50%',
-                transform: `translate(calc(-50% + ${s.x === '-52%' ? '-115px' : s.x === '0%' ? '0px' : '115px'}), calc(-50% + ${s.y})) rotate(${s.rotate}) scale(${s.scale})`,
-                zIndex: s.z,
-                borderColor: 'var(--border)',
-                boxShadow: `0 24px 64px rgba(0,0,0,0.3), 0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent)`,
-              }}
-            >
-              <Image
-                src={isDark ? s.dark : s.light}
-                alt={s.alt}
-                fill
-                className="object-cover"
-                priority={i === 1}
-              />
-              {/* Subtle gloss */}
-              <div className="absolute inset-0 pointer-events-none" style={{
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.07) 0%, transparent 45%)',
-              }} />
-            </div>
-          ))}
+          <div className="phone-frame relative mx-auto" style={{ width: 260, height: 540 }}>
+            <Image src={isDark ? '/images/dashboard_dark.jpeg' : '/images/dashboard.jpeg'} alt="Insightory App" fill className="object-cover" priority />
+            <div className="absolute inset-0 pointer-events-none" style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 50%)',
+              borderRadius: '44px',
+            }} />
+          </div>
         </div>
 
         {/* Trust badges */}
-        <div ref={badgesRef} className="flex flex-wrap items-center mt-16 justify-center gap-6 text-sm"
+        <div ref={badgesRef} className="flex flex-wrap items-center mt justify-center gap-6 text-sm"
           style={{ color: 'var(--subtext)'}}>
           {[
             {

@@ -83,7 +83,7 @@ export default function About() {
             </p>
 
             {/* Testimonial */}
-            <div className="glass-card p-6">
+            <div className="glass-card aurora-card p-6">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-accent flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                   JM
@@ -103,7 +103,7 @@ export default function About() {
             {steps.map((s, i) => (
               <div
                 key={i}
-                className="step-item flex items-start gap-6 glass-card p-6 feature-card"
+                className={`step-item flex items-start gap-6 glass-card p-6 feature-card${i % 2 === 0 ? ' aurora-card' : ''}`}
               >
                 <div
                   className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg"
