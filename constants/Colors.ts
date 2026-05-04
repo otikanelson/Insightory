@@ -1,4 +1,3 @@
-// constants/Colors.ts — Modern redesign
 export const Colors = {
   light: {
     background: '#f0f0f0ff',
@@ -24,7 +23,7 @@ export const Colors = {
   },
   dark: {
     background: '#080B18',
-    tabSurface: '#0F1221',
+    tabSurface: '#0F1221',  
     surface: '#111527',
     surfaceElevated: '#161A30',
     text: '#F0F2FF',

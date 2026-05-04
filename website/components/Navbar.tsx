@@ -160,8 +160,9 @@ export default function Navbar() {
         <div ref={ctaRef} className="hidden md:flex items-center gap-3">
           <ThemeToggle />
           <a
-            href="#download"
-            onClick={(e) => { e.preventDefault(); handleNavClick('#download'); }}
+            href="https://play.google.com/store/apps/details?id=com.son_the_nel.Inventory"
+            target="_blank"
+            rel="noopener noreferrer"
             className="btn-glow flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -213,8 +214,9 @@ export default function Navbar() {
           ))}
           <li>
             <a
-              href="#download"
-              onClick={(e) => { e.preventDefault(); handleNavClick('#download'); }}
+              href="https://play.google.com/store/apps/details?id=com.son_the_nel.Inventory"
+              target="_blank"
+              rel="noopener noreferrer"
               className="btn-glow inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold mt-2"
             >
               Get the App
