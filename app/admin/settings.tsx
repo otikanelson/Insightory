@@ -1,11 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  View
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";

@@ -7,13 +7,13 @@ import { useRouter } from "expo-router";
 import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Platform,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    View
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";

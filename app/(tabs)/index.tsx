@@ -157,18 +157,18 @@ export default function DashboardScreen() {
   // Show loading state if authentication is still loading
   if (authLoading) {
     return (
-      <ScreenBackground style={{ justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }}>
         <ThemedText style={{ color: theme.subtext }}>Loading...</ThemedText>
-      </ScreenBackground>
+      </View>
     );
   }
 
   // Show loading state if not authenticated yet
   if (!isAuthenticated) {
     return (
-      <ScreenBackground style={{ justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }}>
         <ThemedText style={{ color: theme.subtext }}>Please log in to continue</ThemedText>
-      </ScreenBackground>
+      </View>
     );
   }
 
@@ -257,7 +257,7 @@ export default function DashboardScreen() {
   ];
 
   return (
-    <ScreenBackground>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Blue Header */}
       <View style={[styles.blueHeader, { backgroundColor: theme.primary, paddingTop: insets.top + 16 }]}>
         <View style={styles.headerTop}>
@@ -337,7 +337,7 @@ export default function DashboardScreen() {
               <ImageBackground
                 source={{ uri: card.image }}
                 style={styles.opCardBg}
-                imageStyle={[styles.opCardImage, { opacity: 2.9 }]}
+                imageStyle={[styles.opCardImage, { opacity: 0.18 }]}
               >
                 {/* Card color wash over the image */}
                 <View style={[styles.opCardOverlay, { backgroundColor: card.colors.bg }]} />
@@ -715,7 +715,7 @@ export default function DashboardScreen() {
           </Pressable>
         </View>
       </ScrollView>
-    </ScreenBackground>
+    </View>
   );
 }
 

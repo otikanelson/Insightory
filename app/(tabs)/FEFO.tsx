@@ -3,12 +3,12 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    Pressable,
-    RefreshControl,
-    StyleSheet,
-    View
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from '../../components/ThemedText';
@@ -174,7 +174,7 @@ export default function FEFOScreen() {
   };
 
   return (
-    <ScreenBackground>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Blue Header */}
       <View style={[styles.blueHeader, { backgroundColor: theme.primary, paddingTop: insets.top + 16 }]}>
         <View style={styles.headerTop}>
@@ -399,7 +399,7 @@ export default function FEFOScreen() {
           : null
         }
       />
-    </ScreenBackground>
+    </View>
   );
 }
 
