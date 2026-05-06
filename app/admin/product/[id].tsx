@@ -6,16 +6,17 @@ import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Dimensions,
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  View
+    ActivityIndicator,
+    Dimensions,
+    Image,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    View
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { DisabledButton } from "../../../components/DisabledButton";
 import { ThemedText } from '../../../components/ThemedText';
@@ -24,7 +25,6 @@ import { useAIPredictions } from "../../../hooks/useAIPredictions";
 import { useFeatureAccess } from "../../../hooks/useFeatureAccess";
 import { useImageUpload } from "../../../hooks/useImageUpload";
 import { useProducts } from "../../../hooks/useProducts";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
@@ -984,6 +984,136 @@ export default function AdminProductDetails() {
           </View>
         )}
 
+        {/* FEFO Priority Analysis — only for perishable products with batches */}
+        {!isGlobalProduct && product.isPerishable && product.batches && product.batches.length > 0 && (
+          <View style={[styles.section, { backgroundColor: theme.surface }]}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="sparkles" size={18} color="#FF9500" />
+              <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
+                FEFO Priority Analysis
+              </ThemedText>
+            </View>
+
+            {/* Sell-through summary */}
+            {prediction && (
+              <View style={[styles.fefoSummaryRow, { backgroundColor: theme.background }]}>
+                <View style={styles.fefoSummaryItem}>
+                  <ThemedText style={[styles.fefoSummaryLabel, { color: theme.subtext }]}>Velocity</ThemedText>
+                  <ThemedText style={[styles.fefoSummaryValue, { color: theme.primary }]}>
+                    {prediction.metrics.velocity.toFixed(1)}/day
+                  </ThemedText>
+                </View>
+                <View style={[styles.fefoSummaryDivider, { backgroundColor: theme.border }]} />
+                <View style={styles.fefoSummaryItem}>
+                  <ThemedText style={[styles.fefoSummaryLabel, { color: theme.subtext }]}>Days to Stockout</ThemedText>
+                  <ThemedText style={[styles.fefoSummaryValue, {
+                    color: prediction.metrics.daysUntilStockout <= 7 ? '#FF3B30'
+                      : prediction.metrics.daysUntilStockout <= 14 ? '#FF9500'
+                      : '#34C759'
+                  }]}>
+                    {prediction.metrics.daysUntilStockout}d
+                  </ThemedText>
+                </View>
+                <View style={[styles.fefoSummaryDivider, { backgroundColor: theme.border }]} />
+                <View style={styles.fefoSummaryItem}>
+                  <ThemedText style={[styles.fefoSummaryLabel, { color: theme.subtext }]}>Risk Score</ThemedText>
+                  <ThemedText style={[styles.fefoSummaryValue, {
+                    color: prediction.metrics.riskScore >= 70 ? '#FF3B30'
+                      : prediction.metrics.riskScore >= 40 ? '#FF9500'
+                      : '#34C759'
+                  }]}>
+                    {prediction.metrics.riskScore}/100
+                  </ThemedText>
+                </View>
+              </View>
+            )}
+
+            <ThemedText style={[styles.subsectionTitle, { color: theme.text }]}>
+              Batch Priority Queue
+            </ThemedText>
+
+            {/* Batch rows sorted by urgency */}
+            {[...product.batches]
+              .map((batch: any) => {
+                const velocity = prediction?.metrics?.velocity ?? 0;
+                const riskScore = prediction?.metrics?.riskScore ?? 0;
+                const daysLeft = Math.ceil(
+                  (new Date(batch.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                );
+                const daysToSellOut = velocity > 0 ? Math.round(batch.quantity / velocity) : null;
+                let sellThroughPressure = 0;
+                if (daysLeft > 0 && velocity > 0) {
+                  const gap = (daysToSellOut ?? 0) - daysLeft;
+                  sellThroughPressure = Math.min(Math.max((gap / Math.max(daysLeft, 1)) * 100, 0), 100);
+                } else if (daysLeft > 0 && velocity === 0) {
+                  sellThroughPressure = daysLeft < 30 ? 100 : 60;
+                }
+                const urgencyScore = Math.round((riskScore * 0.5) + (sellThroughPressure * 0.5));
+                const statusColor = urgencyScore >= 70 ? '#FF3B30' : urgencyScore >= 40 ? '#FF9500' : '#34C759';
+                return { ...batch, daysLeft, daysToSellOut, sellThroughPressure: Math.round(sellThroughPressure), urgencyScore, statusColor };
+              })
+              .sort((a: any, b: any) => b.urgencyScore - a.urgencyScore)
+              .map((batch: any, index: number) => (
+                <View
+                  key={index}
+                  style={[styles.fefoBatchRow, { backgroundColor: theme.background, borderColor: theme.border }]}
+                >
+                  <View style={[styles.fefoIndicator, { backgroundColor: batch.statusColor }]} />
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.fefoBatchTop}>
+                      <ThemedText style={[styles.fefoBatchId, { color: theme.subtext }]}>
+                        BATCH #{batch.batchNumber?.slice(-7).toUpperCase() || "MANUAL"}
+                      </ThemedText>
+                      <ThemedText style={[styles.fefoUrgency, { color: batch.statusColor }]}>
+                        URGENCY {batch.urgencyScore}/100
+                      </ThemedText>
+                    </View>
+                    <View style={styles.fefoBatchTags}>
+                      <View style={[styles.fefoTag, { backgroundColor: theme.surface }]}>
+                        <Ionicons name="cube-outline" size={10} color={theme.primary} />
+                        <ThemedText style={[styles.fefoTagText, { color: theme.subtext }]}>
+                          {batch.quantity} units
+                        </ThemedText>
+                      </View>
+                      <View style={[styles.fefoTag, { backgroundColor: theme.surface }]}>
+                        <Ionicons name="calendar-outline" size={10} color={theme.primary} />
+                        <ThemedText style={[styles.fefoTagText, { color: theme.subtext }]}>
+                          {batch.daysLeft < 0 ? 'EXPIRED' : `${batch.daysLeft}d left`}
+                        </ThemedText>
+                      </View>
+                      {batch.daysToSellOut !== null && (
+                        <View style={[styles.fefoTag, {
+                          backgroundColor: batch.daysToSellOut > batch.daysLeft ? '#FF3B3015' : '#34C75915'
+                        }]}>
+                          <Ionicons
+                            name="speedometer-outline"
+                            size={10}
+                            color={batch.daysToSellOut > batch.daysLeft ? '#FF3B30' : '#34C759'}
+                          />
+                          <ThemedText style={[styles.fefoTagText, {
+                            color: batch.daysToSellOut > batch.daysLeft ? '#FF3B30' : '#34C759'
+                          }]}>
+                            {batch.daysToSellOut > batch.daysLeft ? 'EXPIRES FIRST' : `SELLS OUT ${batch.daysToSellOut}d`}
+                          </ThemedText>
+                        </View>
+                      )}
+                      {batch.daysToSellOut === null && (
+                        <View style={[styles.fefoTag, { backgroundColor: '#FF3B3015' }]}>
+                          <Ionicons name="pause-circle-outline" size={10} color="#FF3B30" />
+                          <ThemedText style={[styles.fefoTagText, { color: '#FF3B30' }]}>NO SALES</ThemedText>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                  <ThemedText style={[styles.fefoBatchRank, { color: theme.border }]}>
+                    {index + 1}
+                  </ThemedText>
+                </View>
+              ))
+            }
+          </View>
+        )}
+
         {/* Batch Timeline */}
         {product.batches && product.batches.length > 0 && (
           <View style={[styles.section, { backgroundColor: theme.surface }]}>
@@ -1807,5 +1937,84 @@ const styles = StyleSheet.create({
   categoryOptionText: {
     fontSize: 14,
     fontWeight: "600",
+  },
+
+  // FEFO Priority Analysis styles
+  fefoSummaryRow: {
+    flexDirection: "row",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+  },
+  fefoSummaryItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  fefoSummaryLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  fefoSummaryValue: {
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  fefoSummaryDivider: {
+    width: 1,
+    marginHorizontal: 8,
+  },
+  fefoBatchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    gap: 10,
+  },
+  fefoIndicator: {
+    width: 4,
+    borderRadius: 2,
+    alignSelf: "stretch",
+    minHeight: 60,
+  },
+  fefoBatchTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  fefoBatchId: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  fefoUrgency: {
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  fefoBatchTags: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  fefoTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  fefoTagText: {
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  fefoBatchRank: {
+    fontSize: 18,
+    fontWeight: "900",
+    minWidth: 28,
+    textAlign: "center",
   },
 });

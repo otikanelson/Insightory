@@ -8,15 +8,15 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Dimensions,
-    FlatList,
-    Modal,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    View
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Modal,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -704,45 +704,42 @@ export default function AdminSales() {
           <View style={[styles.header, { backgroundColor: theme.primary, paddingTop: insets.top + 12 }]}>
             <View style={styles.headerTop}>
               <View>
-                <ThemedText style={[styles.headerEyebrow, { color: "rgba(255,255,255,0.65)" }]}>
+                <ThemedText style={[styles.headerEyebrow, { color: isDark ? "#000" : "rgba(255,255,255,0.75)" }]}>
                   SALES DASHBOARD
                 </ThemedText>
-                <ThemedText style={styles.headerTitle}>
+                <ThemedText style={[styles.headerTitle, { color: "#000" }]}>
                   {activeTab === "dashboard" ? "Overview" : activeTab === "checkout" ? "New Sale" : "History"}
                 </ThemedText>
               </View>
-              <Pressable style={styles.headerIconBtn} onPress={() => router.push("/admin/settings")}>
-                <Ionicons name="settings-outline" size={20} color="#FFF" />
-              </Pressable>
-            </View>
-
-            {/* Tab Pills */}
-            <View style={styles.tabPills}>
-              {(["dashboard", "checkout", "history"] as const).map((tab) => (
-                <Pressable
-                  key={tab}
-                  style={[
-                    styles.tabPill,
-                    activeTab === tab && styles.tabPillActive,
-                  ]}
-                  onPress={() => setActiveTab(tab)}
-                >
-                  <Ionicons
-                    name={tab === "dashboard" ? "grid-outline" : tab === "checkout" ? "cart-outline" : "time-outline"}
-                    size={14}
-                    color={activeTab === tab ? theme.primary : "rgba(255,255,255,0.7)"}
-                  />
-                  <ThemedText
-                    style={[
-                      styles.tabPillText,
-                      { color: activeTab === tab ? theme.primary : "rgba(255,255,255,0.7)" },
-                    ]}
-                  >
-                    {tab === "dashboard" ? "Dashboard" : tab === "checkout" ? "Checkout" : "History"}
-                  </ThemedText>
+              <View style={styles.headerIcons}>
+                <Pressable style={styles.headerIconBtn} onPress={() => router.push("/admin/settings/profile")}>
+                  <Ionicons name="person-outline" size={20} color={"#FFF"} />
                 </Pressable>
-              ))}
+                <Pressable style={styles.headerIconBtn} onPress={() => router.push("/admin/settings")}>
+                  <Ionicons name="settings-outline" size={20} color={"#FFF"} />
+                </Pressable>
+              </View>
             </View>
+          </View>
+
+          {/* Tab Bar */}
+          <View style={[styles.tabBar, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
+            {(["dashboard", "checkout", "history"] as const).map((tab) => (
+              <Pressable
+                key={tab}
+                style={[styles.tabBarItem, activeTab === tab && { borderBottomColor: theme.primary }]}
+                onPress={() => setActiveTab(tab)}
+              >
+                <Ionicons
+                  name={tab === "dashboard" ? "grid-outline" : tab === "checkout" ? "cart-outline" : "time-outline"}
+                  size={16}
+                  color={activeTab === tab ? theme.primary : theme.subtext}
+                />
+                <ThemedText style={[styles.tabBarText, { color: activeTab === tab ? theme.primary : theme.subtext }]}>
+                  {tab === "dashboard" ? "Dashboard" : tab === "checkout" ? "Checkout" : "History"}
+                </ThemedText>
+              </Pressable>
+            ))}
           </View>
 
           {/* Tab Content */}
@@ -844,7 +841,7 @@ const styles = StyleSheet.create({
   // ── Header ──────────────────────────────────────────────────────────────────
   header: {
     paddingHorizontal: 20,
-    paddingBottom: 0,
+    paddingBottom: 16,
   },
   headerTop: {
     flexDirection: "row",
@@ -872,26 +869,28 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
-  // ── Tab Pills ────────────────────────────────────────────────────────────────
-  tabPills: {
+  headerIcons: {
     flexDirection: "row",
-    gap: 8,
-    paddingBottom: 16,
+    gap: 10,
   },
-  tabPill: {
+
+  // ── Tab Bar ──────────────────────────────────────────────────────────────────
+  tabBar: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    paddingHorizontal: 4,
+  },
+  tabBarItem: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    paddingVertical: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
   },
-  tabPillActive: {
-    backgroundColor: "#FFF",
-  },
-  tabPillText: {
+  tabBarText: {
     fontSize: 13,
     fontWeight: "600",
   },

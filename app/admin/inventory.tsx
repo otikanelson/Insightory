@@ -4,14 +4,14 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    FlatList,
-    Image,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    View
+  FlatList,
+  Image,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -310,6 +310,22 @@ export default function AdminInventory() {
               </Pressable>
             ))}
         </ScrollView>
+
+        {/* Sort & Display status line */}
+        <View style={styles.statusBar}>
+          <ThemedText style={[styles.statusText, { color: theme.subtext }]}>
+            Order by:{" "}
+            <ThemedText style={[styles.statusValue, { color: theme.primary }]}>
+              {sortField === "name" ? "Name" : sortField === "totalQuantity" ? "Quantity" : sortField === "risk" ? "Risk" : "Velocity"}
+            </ThemedText>
+          </ThemedText>
+          <ThemedText style={[styles.statusText, { color: theme.subtext }]}>
+            Display:{" "}
+            <ThemedText style={[styles.statusValue, { color: theme.primary }]}>
+              {displayMode === "rect" ? "Grid" : displayMode === "list" ? "List" : "Cards"}
+            </ThemedText>
+          </ThemedText>
+        </View>
       </View>
 
       {/* Product List */}
@@ -480,8 +496,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   filterSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingTop: 12,
+    paddingBottom: 0,
   },
   searchContainer: {
     flexDirection: "row",
@@ -491,6 +507,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 48,
     marginBottom: 14,
+    marginHorizontal: 20,
     gap: 8,
   },
   searchInput: {
@@ -510,7 +527,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     paddingBottom: 4,
+    paddingHorizontal: 20,
   },
+  statusBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+    paddingHorizontal: 22,
+    paddingBottom: 10,
+  },
+  statusText: { fontSize: 11 },
+  statusValue: { fontSize: 11, fontWeight: "700" as const },
   pill: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -585,8 +612,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignSelf: "flex-start",
   },
-  statusText: { fontSize: 10, fontWeight: "700" },
-
+  statusBadgeText: { fontSize: 10, fontWeight: "700" },
   listItem: {
     flexDirection: "row",
     alignItems: "center",
