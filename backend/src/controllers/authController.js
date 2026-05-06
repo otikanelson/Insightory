@@ -1121,6 +1121,8 @@ exports.updateAdminPin = async (req, res) => {
     } else if (pinType === 'security') {
       const hasExistingPin = admin.securityPin && admin.securityPin.length === 4;
 
+      console.log('🔐 updateAdminPin — security — hasExistingPin:', hasExistingPin, 'oldPin provided:', !!oldPin);
+
       if (hasExistingPin) {
         // Existing PIN — require old PIN to verify
         if (!oldPin) {
@@ -1158,6 +1160,33 @@ exports.updateAdminPin = async (req, res) => {
       success: false,
       error: 'Failed to update admin PIN'
     });
+  }
+};
+
+// Remove admin security PIN (sets it to null in DB)
+exports.removeAdminSecurityPin = async (req, res) => {
+  try {
+    const { currentPin } = req.body;
+
+    const admin = await User.findOne({ _id: req.user.id, role: 'admin' });
+    if (!admin) {
+      return res.status(404).json({ success: false, error: 'Admin not found' });
+    }
+
+    // Verify current PIN before removing
+    if (admin.securityPin && admin.securityPin !== currentPin) {
+      return res.status(401).json({ success: false, error: 'Incorrect current Security PIN' });
+    }
+
+    admin.securityPin = null;
+    await admin.save();
+
+    console.log('🔐 removeAdminSecurityPin — PIN cleared for admin:', admin._id);
+
+    res.json({ success: true, message: 'Security PIN removed successfully' });
+  } catch (error) {
+    console.error('Remove admin security PIN error:', error);
+    res.status(500).json({ success: false, error: 'Failed to remove security PIN' });
   }
 };
 

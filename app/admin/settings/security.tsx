@@ -252,6 +252,15 @@ export default function SecuritySettingsScreen() {
         modalToast.show({ type: 'error', title: 'Incorrect PIN', message: 'The PIN you entered is wrong' });
         return;
       }
+
+      // Remove from backend DB first
+      const token = await AsyncStorage.getItem('auth_session_token');
+      await axios.delete(`${API_URL}/auth/admin/security-pin`, {
+        data: { currentPin: removeSecurityPinConfirm },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Then clear local cache
       await AsyncStorage.removeItem('admin_security_pin');
       setHasSecurityPin(false);
       modalToast.show({ type: 'success', title: 'Security PIN Removed', message: 'Sensitive operations are now unrestricted' });
@@ -259,8 +268,9 @@ export default function SecuritySettingsScreen() {
         setShowRemoveSecurityPinModal(false);
         setRemoveSecurityPinConfirm("");
       }, 1200);
-    } catch (error) {
-      modalToast.show({ type: 'error', title: 'Removal Failed', message: 'Please try again' });
+    } catch (error: any) {
+      const msg = error?.response?.data?.error || 'Please try again';
+      modalToast.show({ type: 'error', title: 'Removal Failed', message: msg });
     }
   };
 

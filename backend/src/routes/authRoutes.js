@@ -61,6 +61,9 @@ router.get('/staff/:staffId/activity', authenticate, tenantFilter, authControlle
 // Update admin PIN
 router.put('/admin/pin', authenticate, authController.updateAdminPin);
 
+// Remove admin security PIN (clears it from DB)
+router.delete('/admin/security-pin', authenticate, authController.removeAdminSecurityPin);
+
 // Delete accounts
 router.delete('/admin/account', authenticate, authController.deleteAdminAccount);
 router.delete('/staff/account', authenticate, authController.deleteStaffAccount);
