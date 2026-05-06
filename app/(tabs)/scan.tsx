@@ -1,6 +1,7 @@
 import AdminSecurityPINWarning from "@/components/AdminSecurityPINWarning";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { HelpTooltip } from "@/components/HelpTooltip";
+import { ModalToast, useModalToast } from "@/components/ModalToast";
 import { useAuth } from "@/context/AuthContext";
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,7 +29,6 @@ import Toast from "react-native-toast-message";
 import { ThemedText } from '../../components/ThemedText';
 import { useTheme } from "../../context/ThemeContext";
 import { hasSecurityPIN } from "../../utils/securityPINCheck";
-import { ModalToast, useModalToast } from "@/components/ModalToast";
 
 const { height } = Dimensions.get("window");
 
@@ -47,7 +47,7 @@ export default function ScanScreen() {
   const params = useLocalSearchParams();
   const { initialTab } = params;
   const { theme } = useTheme();
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const modalToast = useModalToast();
 
   // Check feature access for scanning and other permissions
@@ -588,15 +588,24 @@ export default function ScanScreen() {
   // Handle admin PIN submission for new product registration
   const handlePinSubmit = async () => {
     try {
-      const storedPin = await AsyncStorage.getItem('admin_security_pin');
-      if (!storedPin) {
-        modalToast.show({ type: "error", title: "Security PIN Not Set", message: "Please set up admin security PIN in settings first" });
+      // Get storeId — prefer context (always fresh), fall back to AsyncStorage
+      const storeId = user?.storeId || await AsyncStorage.getItem('auth_store_id');
+
+      if (!storeId) {
+        modalToast.show({ type: "error", title: "Store Not Found", message: "Could not identify store. Please log out and log back in." });
         setPinModal(false);
         setAdminPin("");
         setScanned(false);
         return;
       }
-      if (adminPin === storedPin) {
+
+      // Verify against backend — authoritative source, works even if local cache is stale
+      const response = await axios.post(
+        `${process.env.EXPO_PUBLIC_API_URL}/auth/verify-admin-security-pin`,
+        { pin: adminPin, storeId }
+      );
+
+      if (response.data.success) {
         await AsyncStorage.setItem('admin_last_auth', Date.now().toString());
         setPinModal(false);
         setAdminPin("");
@@ -607,12 +616,23 @@ export default function ScanScreen() {
         modalToast.show({ type: "error", title: "Access Denied", message: "Incorrect Security PIN" });
         setAdminPin("");
       }
-    } catch (error) {
-      console.error("PIN verification error:", error);
-      modalToast.show({ type: "error", title: "Authentication Error", message: "Could not verify PIN" });
-      setPinModal(false);
-      setAdminPin("");
-      setScanned(false);
+    } catch (error: any) {
+      // 401 = wrong PIN, anything else = network/server error
+      if (error?.response?.status === 401) {
+        modalToast.show({ type: "error", title: "Access Denied", message: "Incorrect Security PIN" });
+        setAdminPin("");
+      } else if (error?.response?.status === 404) {
+        modalToast.show({ type: "error", title: "Security PIN Not Set", message: "Please set up admin security PIN in settings first" });
+        setPinModal(false);
+        setAdminPin("");
+        setScanned(false);
+      } else {
+        console.error("PIN verification error:", error);
+        modalToast.show({ type: "error", title: "Authentication Error", message: "Could not verify PIN. Check your connection." });
+        setPinModal(false);
+        setAdminPin("");
+        setScanned(false);
+      }
     }
   };
 

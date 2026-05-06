@@ -11,10 +11,8 @@ import {
     StyleSheet,
     View
 } from "react-native";
-import { PredictionCard } from "../../components/PredictionCard";
 import { ThemedText } from '../../components/ThemedText';
 import { useTheme } from "../../context/ThemeContext";
-import { useAIPredictions } from "../../hooks/useAIPredictions";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 import { useProducts } from "../../hooks/useProducts";
 
@@ -29,17 +27,12 @@ interface Batch {
 export default function ProductDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
 
   // Check feature access for adding batches
   const addAccess = useFeatureAccess('addProducts');
 
   const { getProductById } = useProducts();
-  const { prediction, loading: predictionLoading } = useAIPredictions({ 
-    productId: id as string,
-    enableWebSocket: true,
-    autoFetch: true
-  });
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -248,12 +241,6 @@ export default function ProductDetails() {
             </View>
           </View>
         </View>
-
-        {/* AI Prediction Card - Simplified for Users */}
-        <PredictionCard 
-          prediction={prediction} 
-          loading={predictionLoading}
-        />
 
         {/* Price Information */}
         {priceAnalytics && (priceAnalytics.genericPrice || priceAnalytics.hasBatchPrices) && (

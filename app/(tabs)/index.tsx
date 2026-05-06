@@ -191,7 +191,7 @@ export default function DashboardScreen() {
       href: "/(tabs)/scan" as Href,
       colors: cards.scan,
       // Barcode scanning / logistics
-      image: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400&q=80",
+      image: "https://plus.unsplash.com/premium_photo-1661933130869-eba2d7e28332?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     },
     {
       key: "add",
@@ -337,7 +337,7 @@ export default function DashboardScreen() {
               <ImageBackground
                 source={{ uri: card.image }}
                 style={styles.opCardBg}
-                imageStyle={[styles.opCardImage, { opacity: 0.18 }]}
+                imageStyle={[styles.opCardImage, { opacity: 4.38 }]}
               >
                 {/* Card color wash over the image */}
                 <View style={[styles.opCardOverlay, { backgroundColor: card.colors.bg }]} />

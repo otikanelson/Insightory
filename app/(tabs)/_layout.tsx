@@ -139,6 +139,12 @@ export default function TabsLayout() {
             href: null,
           }}
         />
+        <Tabs.Screen
+          name="product-stats/[id]"
+          options={{
+            href: null,
+          }}
+        />
       </Tabs>
     </View>
   );

@@ -99,6 +99,16 @@ export default function FEFOScreen() {
 
   /** 
    * FEFO Technical Logic: Flattening Batches into a Priority Queue
+   *
+   * EXPIRY mode: pure FEFO — soonest expiry date first.
+   *
+   * AI mode: composite urgency score that combines:
+   *   1. riskScore (0-100) from the prediction engine (sales history, trends)
+   *   2. sellThroughPressure: will this batch expire before it sells out?
+   *      pressure = clamp((daysToSellOut - daysLeft) / daysLeft, 0, 1) × 100
+   *      → positive means stock won't sell in time → high urgency
+   *   3. Final urgency = (riskScore × 0.5) + (sellThroughPressure × 0.5)
+   *      Sorted highest urgency first.
    **/
   const priorityQueue = useMemo(() => {
     const queue: any[] = [];
@@ -109,16 +119,33 @@ export default function FEFOScreen() {
         product.batches &&
         product.batches.length > 0
       ) {
+        const prediction = predictions[product._id];
+        const riskScore = prediction?.metrics?.riskScore ?? 0;
+        const velocity = prediction?.metrics?.velocity ?? 0; // units/day
+
         const productBatches = product.batches.map((batch) => {
           const daysLeft = Math.ceil(
             (new Date(batch.expiryDate).getTime() - new Date().getTime()) /
               (1000 * 60 * 60 * 24),
           );
-          
-          // Get prediction data for this product
-          const prediction = predictions[product._id];
-          const riskScore = prediction?.metrics?.riskScore || 0;
-          
+
+          // Days to sell out this batch at current velocity
+          const daysToSellOut = velocity > 0 ? batch.quantity / velocity : Infinity;
+
+          // Sell-through pressure: how far behind velocity is vs expiry
+          // Positive = will expire before selling out, negative = fine
+          let sellThroughPressure = 0;
+          if (daysLeft > 0 && velocity > 0) {
+            const gap = daysToSellOut - daysLeft; // positive = problem
+            sellThroughPressure = Math.min(Math.max((gap / Math.max(daysLeft, 1)) * 100, 0), 100);
+          } else if (daysLeft > 0 && velocity === 0) {
+            // No sales at all — maximum pressure if expiring within 30 days
+            sellThroughPressure = daysLeft < 30 ? 100 : 60;
+          }
+
+          // Composite urgency score (0-100)
+          const urgencyScore = Math.round((riskScore * 0.5) + (sellThroughPressure * 0.5));
+
           return {
             ...batch,
             parentName: product.name,
@@ -127,34 +154,31 @@ export default function FEFOScreen() {
             category: product.category,
             totalStock: product.totalQuantity,
             riskScore,
+            velocity,
+            daysToSellOut: isFinite(daysToSellOut) ? Math.round(daysToSellOut) : null,
+            sellThroughPressure: Math.round(sellThroughPressure),
+            urgencyScore,
             prediction,
           };
         });
 
         if (viewByProduct) {
-          // Find the batch with earliest expiry for this product
-          const earliestBatch = productBatches.reduce((prev, curr) =>
-            prev.daysLeft < curr.daysLeft ? prev : curr,
+          // Pick the batch with the worst urgency (AI) or earliest expiry (FEFO)
+          const worstBatch = productBatches.reduce((prev, curr) =>
+            sortByAI
+              ? curr.urgencyScore > prev.urgencyScore ? curr : prev
+              : curr.daysLeft < prev.daysLeft ? curr : prev
           );
-          queue.push(earliestBatch);
+          queue.push(worstBatch);
         } else {
-          // Push all batches normally
           queue.push(...productBatches);
         }
       }
     });
 
-    // Sort by AI risk or expiry date
     if (sortByAI) {
-      // Sort by risk score (highest first), then by days left as tiebreaker
-      return queue.sort((a, b) => {
-        if (b.riskScore !== a.riskScore) {
-          return b.riskScore - a.riskScore;
-        }
-        return a.daysLeft - b.daysLeft;
-      });
+      return queue.sort((a, b) => b.urgencyScore - a.urgencyScore);
     } else {
-      // Sort by days left (earliest first)
       return queue.sort((a, b) => a.daysLeft - b.daysLeft);
     }
   }, [products, viewByProduct, sortByAI, predictions]);
@@ -285,11 +309,11 @@ export default function FEFOScreen() {
         }
         contentContainerStyle={styles.list}
         renderItem={({ item, index }) => {
-          const statusColor = sortByAI ? getRiskColor(item.riskScore) : getStatusColor(item.daysLeft);
+          const statusColor = sortByAI ? getRiskColor(item.urgencyScore) : getStatusColor(item.daysLeft);
 
           return (
             <Pressable
-              onPress={() => router.push(`/product/${item.parentId}`)}
+              onPress={() => router.push(`/(tabs)/product-stats/${item.parentId}` as any)}
               style={[
                 styles.technicalRow,
                 { 
@@ -313,10 +337,10 @@ export default function FEFOScreen() {
                     </ThemedText>
                   </View>
                   <View style={styles.rightInfo}>
-                    {sortByAI && item.riskScore > 0 ? (
+                    {sortByAI && item.urgencyScore > 0 ? (
                       <>
                         <ThemedText style={[styles.daysCounter, { color: statusColor }]}>
-                          RISK_{item.riskScore}/100
+                          URGENCY_{item.urgencyScore}/100
                         </ThemedText>
                         <ThemedText style={[styles.priorityScore, { color: theme.subtext }]}>
                           {formatTimeRemaining(item.daysLeft)}
@@ -339,25 +363,35 @@ export default function FEFOScreen() {
 
                 <View style={styles.bottomLine}>
                   <View style={styles.tag}>
-                    <Ionicons
-                      name="cube-outline"
-                      size={10}
-                      color={theme.primary}
-                    />
+                    <Ionicons name="cube-outline" size={10} color={theme.primary} />
                     <ThemedText style={[styles.tagText, { color: theme.subtext }]}>
                       {viewByProduct ? "Multi-Batch" : `${item.quantity} units`}
                     </ThemedText>
                   </View>
                   <View style={styles.tag}>
-                    <Ionicons
-                      name="calendar-outline"
-                      size={10}
-                      color={theme.primary}
-                    />
+                    <Ionicons name="calendar-outline" size={10} color={theme.primary} />
                     <ThemedText style={[styles.tagText, { color: theme.subtext }]}>
                       {new Date(item.expiryDate).toLocaleDateString()}
                     </ThemedText>
                   </View>
+                  {sortByAI && item.velocity > 0 && (
+                    <View style={[styles.tag, { backgroundColor: item.daysToSellOut !== null && item.daysToSellOut > item.daysLeft ? "#FF3B3015" : "#34C75915" }]}>
+                      <Ionicons name="speedometer-outline" size={10} color={item.daysToSellOut !== null && item.daysToSellOut > item.daysLeft ? "#FF3B30" : "#34C759"} />
+                      <ThemedText style={[styles.tagText, { color: item.daysToSellOut !== null && item.daysToSellOut > item.daysLeft ? "#FF3B30" : "#34C759" }]}>
+                        {item.daysToSellOut !== null
+                          ? item.daysToSellOut > item.daysLeft
+                            ? `EXPIRES_FIRST`
+                            : `SELLS_OUT_${item.daysToSellOut}d`
+                          : `${item.velocity.toFixed(1)}/day`}
+                      </ThemedText>
+                    </View>
+                  )}
+                  {sortByAI && item.velocity === 0 && (
+                    <View style={[styles.tag, { backgroundColor: "#FF3B3015" }]}>
+                      <Ionicons name="pause-circle-outline" size={10} color="#FF3B30" />
+                      <ThemedText style={[styles.tagText, { color: "#FF3B30" }]}>NO_SALES</ThemedText>
+                    </View>
+                  )}
                   {sortByAI && item.prediction?.recommendations?.[0] && (
                     <View style={[styles.riskBadge, { backgroundColor: statusColor }]}>
                       <ThemedText style={styles.riskBadgeText}>

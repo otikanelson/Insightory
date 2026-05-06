@@ -93,11 +93,13 @@ export default function StaffRegisterScreen() {
 
           if (response.data.success) {
             const staffId = response.data.data.user.id;
+            const staffStoreId = response.data.data.user.storeId;
             
             await AsyncStorage.multiSet([
               ['auth_staff_pin', pin],
               ['auth_staff_id', staffId],
               ['auth_staff_name', staffName],
+              ['auth_store_id', staffStoreId ? staffStoreId.toString() : ''],
             ]);
 
             Toast.show({
