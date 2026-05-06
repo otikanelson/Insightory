@@ -54,6 +54,7 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
   const [isFirstTime, setIsFirstTime] = useState<boolean | null>(null);
+  const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   
   // Use ref to track navigation without causing re-renders
   const hasNavigatedRef = useRef(false);
@@ -73,10 +74,13 @@ function RootLayoutNav() {
       }
 
       const setupComplete = await AsyncStorage.getItem('admin_first_setup');
+      const onboardingDone = await AsyncStorage.getItem('onboarding_complete');
       setIsFirstTime(!setupComplete);
+      setOnboardingComplete(!!onboardingDone);
     } catch (error) {
       console.error('Error checking first time setup:', error);
       setIsFirstTime(true);
+      setOnboardingComplete(false);
     }
   };
 
@@ -90,13 +94,21 @@ function RootLayoutNav() {
   }, [segments.join('/')]);
 
   useEffect(() => {
-    if (loading || isFirstTime === null || hasNavigatedRef.current) return;
+    if (loading || isFirstTime === null || onboardingComplete === null || hasNavigatedRef.current) return;
 
     const inAuthGroup = segments[0] === 'auth';
     const inAuthorGroup = segments[0] === 'author';
+    const inOnboardingGroup = segments[0] === 'onboarding';
     const isStaffRegister = segments[1] === 'staff-register';
     const isInSetup = segments[1] === 'setup';
     const isInLogin = segments[1] === 'login';
+
+    // If onboarding hasn't been seen yet, send there first (unless already there)
+    if (!onboardingComplete && !inOnboardingGroup && !inAuthorGroup) {
+      hasNavigatedRef.current = true;
+      router.replace('/onboarding' as any);
+      return;
+    }
 
     // Check if user is author - also verify they have a valid session token
     const checkAuthorStatus = async () => {
@@ -146,8 +158,8 @@ function RootLayoutNav() {
       }
 
       // Priority 2: Not authenticated - check if first time or returning user
-      // CRITICAL: Don't redirect if already in auth screens (let user navigate freely)
-      if (!inAuthGroup && !inAuthorGroup) {
+      // CRITICAL: Don't redirect if already in auth/onboarding screens (let user navigate freely)
+      if (!inAuthGroup && !inAuthorGroup && !inOnboardingGroup) {
         if (isFirstTime) {
           // First time user - redirect to setup
           hasNavigatedRef.current = true;
@@ -158,15 +170,16 @@ function RootLayoutNav() {
           router.replace('/auth/login' as any);
         }
       }
-      // If already in auth screens (setup or login), don't interfere - let user navigate
+      // If already in auth/onboarding screens, don't interfere - let user navigate
     });
-  }, [isAuthenticated, segments, loading, isFirstTime]);
+  }, [isAuthenticated, segments, loading, isFirstTime, onboardingComplete]);
 
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="onboarding" />
         <Stack.Screen name="product/[id]" />
         <Stack.Screen name="auth/login" />
         <Stack.Screen name="auth/setup" />

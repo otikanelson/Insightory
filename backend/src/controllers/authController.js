@@ -477,6 +477,8 @@ exports.verifyAdminSecurityPin = async (req, res) => {
   try {
     const { pin, storeId } = req.body;
 
+    console.log('🔐 verifyAdminSecurityPin — storeId:', storeId, 'pin length:', pin?.length);
+
     if (!pin || !storeId) {
       return res.status(400).json({
         success: false,
@@ -491,6 +493,8 @@ exports.verifyAdminSecurityPin = async (req, res) => {
       isActive: true 
     });
 
+    console.log('🔐 verifyAdminSecurityPin — admin found:', admin ? admin._id : 'NOT FOUND', 'hasSecurityPin:', !!(admin?.securityPin));
+
     if (!admin) {
       return res.status(404).json({
         success: false,
@@ -499,6 +503,7 @@ exports.verifyAdminSecurityPin = async (req, res) => {
     }
 
     // Verify Security PIN
+    console.log('🔐 verifyAdminSecurityPin — pin match:', admin.securityPin === pin);
     if (admin.securityPin === pin) {
       res.json({
         success: true,

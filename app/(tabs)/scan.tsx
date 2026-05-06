@@ -601,6 +601,7 @@ export default function ScanScreen() {
       }
 
       // Verify against backend — authoritative source, works even if local cache is stale
+      console.log('🔐 [PIN] Sending verify request — storeId:', storeId, 'pin length:', adminPin.length);
       const response = await axios.post(
         `${process.env.EXPO_PUBLIC_API_URL}/auth/verify-admin-security-pin`,
         { pin: adminPin, storeId }
