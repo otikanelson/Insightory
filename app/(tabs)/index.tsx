@@ -1,13 +1,17 @@
+import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import axios from "axios";
 import { Href, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    View,
+  ActivityIndicator,
+  ImageBackground,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "../../components/ThemedText";
@@ -17,6 +21,24 @@ import { useAIPredictions } from "../../hooks/useAIPredictions";
 import { useAlerts } from "../../hooks/useAlerts";
 import { useAnalytics } from "../../hooks/useAnalytics";
 import { useProducts } from "../../hooks/useProducts";
+
+interface SalesStats {
+  today: number;
+  week: number;
+  totalSales: number;
+}
+
+interface SaleRecord {
+  _id: string;
+  productName: string;
+  quantitySold: number;
+  totalAmount: number;
+  saleDate: string;
+  soldBy?: {
+    userId: string;
+    role: 'admin' | 'staff';
+  };
+}
 
 const CARD_COLORS = {
   inventory: { bg: "#E8F4FF", icon: "#3B82F6" },
@@ -43,11 +65,64 @@ export default function DashboardScreen() {
   const { dashboardData, loading: analyticsLoading, refresh: refreshAnalytics } = useAnalytics();
   const { quickInsights, loading: aiLoading } = useAIPredictions({ enableWebSocket: true, autoFetch: true });
 
+  // Sales permission check
+  const salesAccess = useFeatureAccess('processSales');
+
   const isLoading = productsLoading || alertsLoading || analyticsLoading;
 
   // AI Insights dropdown state - default to collapsed if no data
   const hasAIData = dashboardData?.summary || quickInsights;
   const [aiInsightsExpanded, setAiInsightsExpanded] = useState(false);
+
+  // Sales section state
+  const [salesExpanded, setSalesExpanded] = useState(false);
+  const [salesStats, setSalesStats] = useState<SalesStats>({ today: 0, week: 0, totalSales: 0 });
+  const [recentSales, setRecentSales] = useState<SaleRecord[]>([]);
+  const [loadingSales, setLoadingSales] = useState(false);
+
+  const fetchSalesData = useCallback(async () => {
+    if (!salesExpanded || !salesAccess.isAllowed) return;
+    setLoadingSales(true);
+    try {
+      const response = await axios.get(
+        `${process.env.EXPO_PUBLIC_API_URL}/analytics/all-sales?limit=5&days=30`
+      );
+      if (response.data.success) {
+        const salesData: SaleRecord[] = response.data.data?.sales || response.data.data || [];
+        setRecentSales(salesData.slice(0, 5));
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        setSalesStats({
+          today: salesData.filter(s => new Date(s.saleDate) >= todayStart).reduce((sum, s) => sum + (s.totalAmount || 0), 0),
+          week: salesData.filter(s => new Date(s.saleDate) >= weekStart).reduce((sum, s) => sum + (s.totalAmount || 0), 0),
+          totalSales: salesData.length,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching sales data:', error);
+    } finally {
+      setLoadingSales(false);
+    }
+  }, [salesExpanded, salesAccess.isAllowed]);
+
+  useEffect(() => {
+    fetchSalesData();
+  }, [fetchSalesData]);
+
+  const formatSaleDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffDays = Math.floor(Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays === 0) return "Today";
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return date.toLocaleDateString();
+    } catch {
+      return "Recently";
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -82,18 +157,18 @@ export default function DashboardScreen() {
   // Show loading state if authentication is still loading
   if (authLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }}>
+      <ScreenBackground style={{ justifyContent: 'center', alignItems: 'center' }}>
         <ThemedText style={{ color: theme.subtext }}>Loading...</ThemedText>
-      </View>
+      </ScreenBackground>
     );
   }
 
   // Show loading state if not authenticated yet
   if (!isAuthenticated) {
     return (
-      <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }}>
+      <ScreenBackground style={{ justifyContent: 'center', alignItems: 'center' }}>
         <ThemedText style={{ color: theme.subtext }}>Please log in to continue</ThemedText>
-      </View>
+      </ScreenBackground>
     );
   }
 
@@ -105,6 +180,8 @@ export default function DashboardScreen() {
       icon: "cube-outline" as const,
       href: "/(tabs)/inventory" as Href,
       colors: cards.inventory,
+      // Warehouse shelves with organized stock
+      image: "https://images.unsplash.com/photo-1553413077-190dd305871c?w=400&q=80",
     },
     {
       key: "scan",
@@ -113,6 +190,8 @@ export default function DashboardScreen() {
       icon: "scan-outline" as const,
       href: "/(tabs)/scan" as Href,
       colors: cards.scan,
+      // Barcode scanning / logistics
+      image: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400&q=80",
     },
     {
       key: "add",
@@ -121,6 +200,8 @@ export default function DashboardScreen() {
       icon: "add-circle-outline" as const,
       href: "/(tabs)/add-products" as Href,
       colors: cards.add,
+      // Stacking / adding boxes to shelves
+      image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400&q=80",
     },
     {
       key: "fefo",
@@ -129,6 +210,8 @@ export default function DashboardScreen() {
       icon: "hourglass-outline" as const,
       href: "/(tabs)/FEFO" as Href,
       colors: cards.fefo,
+      // Hourglass / time / expiry concept
+      image: "https://images.unsplash.com/photo-1501139083538-0139583c060f?w=400&q=80",
     },
   ];
 
@@ -174,7 +257,7 @@ export default function DashboardScreen() {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background }}>
+    <ScreenBackground>
       {/* Blue Header */}
       <View style={[styles.blueHeader, { backgroundColor: theme.primary, paddingTop: insets.top + 16 }]}>
         <View style={styles.headerTop}>
@@ -248,18 +331,29 @@ export default function DashboardScreen() {
           {operationCards.map((card) => (
             <Pressable
               key={card.key}
-              style={[styles.opCard, { backgroundColor: card.colors.bg }]}
+              style={styles.opCard}
               onPress={() => router.push(card.href)}
             >
-              <View style={[styles.opIconBox, { backgroundColor: card.colors.icon + "22" }]}>
-                <Ionicons name={card.icon} size={28} color={card.colors.icon} />
-              </View>
-              <ThemedText style={[styles.opLabel, { color: isDark ? "#F0F2FF" : "#0D0F1A" }]}>
-                {card.label}
-              </ThemedText>
-              <ThemedText style={[styles.opSubtitle, { color: isDark ? "#8892B0" : "#6B7280" }]}>
-                {card.subtitle}
-              </ThemedText>
+              <ImageBackground
+                source={{ uri: card.image }}
+                style={styles.opCardBg}
+                imageStyle={[styles.opCardImage, { opacity: 2.9 }]}
+              >
+                {/* Card color wash over the image */}
+                <View style={[styles.opCardOverlay, { backgroundColor: card.colors.bg }]} />
+                {/* Content sits on top */}
+                <View style={styles.opCardContent}>
+                  <View style={[styles.opIconBox, { backgroundColor: card.colors.icon + "22" }]}>
+                    <Ionicons name={card.icon} size={26} color={card.colors.icon} />
+                  </View>
+                  <ThemedText style={[styles.opLabel, { color: isDark ? "#F0F2FF" : "#0D0F1A" }]}>
+                    {card.label}
+                  </ThemedText>
+                  <ThemedText style={[styles.opSubtitle, { color: isDark ? "#8892B0" : "#6B7280" }]}>
+                    {card.subtitle}
+                  </ThemedText>
+                </View>
+              </ImageBackground>
             </Pressable>
           ))}
         </View>
@@ -325,6 +419,127 @@ export default function DashboardScreen() {
                   <Ionicons name="chevron-forward" size={18} color={theme.subtext} />
                 </Pressable>
               ))}
+            </View>
+          </>
+        )}
+
+        {/* Sales Section - only visible if staff has processSales permission */}
+        {salesAccess.isAllowed && (
+          <>
+            <ThemedText style={[styles.sectionLabel, { color: theme.subtext }]}>
+              SALES
+            </ThemedText>
+
+            <View style={[styles.listCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <Pressable
+                style={styles.listRow}
+                onPress={() => setSalesExpanded(!salesExpanded)}
+              >
+                <View style={[styles.rowIconBox, { backgroundColor: "#10B981" + "18" }]}>
+                  <Ionicons name="receipt-outline" size={20} color="#10B981" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={[styles.rowLabel, { color: theme.text }]}>
+                    Sales Overview
+                  </ThemedText>
+                  <ThemedText style={[styles.rowDesc, { color: theme.subtext }]}>
+                    {salesStats.totalSales > 0
+                      ? `${salesStats.totalSales} transactions · ₦${salesStats.today.toLocaleString()} today`
+                      : "Tap to view sales data"}
+                  </ThemedText>
+                </View>
+                <Ionicons
+                  name={salesExpanded ? "chevron-up" : "chevron-down"}
+                  size={18}
+                  color={theme.subtext}
+                />
+              </Pressable>
+
+              {salesExpanded && (
+                <View style={[styles.salesContent, { borderTopColor: theme.border }]}>
+                  {loadingSales ? (
+                    <View style={styles.salesLoading}>
+                      <ActivityIndicator size="small" color={theme.primary} />
+                      <ThemedText style={[styles.salesLoadingText, { color: theme.subtext }]}>
+                        Loading sales data...
+                      </ThemedText>
+                    </View>
+                  ) : (
+                    <>
+                      {/* Sales Stats */}
+                      <View style={styles.salesStatsRow}>
+                        <View style={[styles.salesStatCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                          <ThemedText style={[styles.salesStatValue, { color: theme.primary }]}>
+                            ₦{salesStats.today.toLocaleString()}
+                          </ThemedText>
+                          <ThemedText style={[styles.salesStatLabel, { color: theme.subtext }]}>TODAY</ThemedText>
+                        </View>
+                        <View style={[styles.salesStatCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                          <ThemedText style={[styles.salesStatValue, { color: theme.primary }]}>
+                            ₦{salesStats.week.toLocaleString()}
+                          </ThemedText>
+                          <ThemedText style={[styles.salesStatLabel, { color: theme.subtext }]}>THIS WEEK</ThemedText>
+                        </View>
+                        <View style={[styles.salesStatCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                          <ThemedText style={[styles.salesStatValue, { color: theme.primary }]}>
+                            {salesStats.totalSales}
+                          </ThemedText>
+                          <ThemedText style={[styles.salesStatLabel, { color: theme.subtext }]}>TOTAL</ThemedText>
+                        </View>
+                      </View>
+
+                      {/* Recent Sales */}
+                      {recentSales.length > 0 ? (
+                        <View style={styles.salesList}>
+                          <ThemedText style={[styles.salesSubtitle, { color: theme.subtext }]}>
+                            RECENT TRANSACTIONS
+                          </ThemedText>
+                          {recentSales.map((sale, index) => (
+                            <View
+                              key={sale._id || index}
+                              style={[
+                                styles.salesItem,
+                                {
+                                  borderBottomColor: theme.border,
+                                  borderBottomWidth: index < recentSales.length - 1 ? 1 : 0,
+                                },
+                              ]}
+                            >
+                              <View style={{ flex: 1 }}>
+                                <View style={styles.salesItemNameRow}>
+                                  <ThemedText style={[styles.salesItemName, { color: theme.text }]} numberOfLines={1}>
+                                    {sale.productName}
+                                  </ThemedText>
+                                  {sale.soldBy?.role === 'admin' && (
+                                    <View style={[styles.adminBadge, { backgroundColor: theme.primary + "18" }]}>
+                                      <ThemedText style={[styles.adminBadgeText, { color: theme.primary }]}>
+                                        ADMIN
+                                      </ThemedText>
+                                    </View>
+                                  )}
+                                </View>
+                                <ThemedText style={[styles.salesItemDate, { color: theme.subtext }]}>
+                                  {formatSaleDate(sale.saleDate)} · {sale.quantitySold} units
+                                </ThemedText>
+                              </View>
+                              <ThemedText style={[styles.salesItemAmount, { color: "#10B981" }]}>
+                                ₦{(sale.totalAmount || 0).toLocaleString()}
+                              </ThemedText>
+                            </View>
+                          ))}
+                        </View>
+                      ) : (
+                        <View style={styles.salesEmpty}>
+                          <Ionicons name="receipt-outline" size={32} color={theme.subtext + "40"} />
+                          <ThemedText style={[styles.salesEmptyText, { color: theme.subtext }]}>
+                            No sales recorded yet
+                          </ThemedText>
+                        </View>
+                      )}
+                    </>
+                  )}
+                </View>
+              )}
             </View>
           </>
         )}
@@ -500,7 +715,7 @@ export default function DashboardScreen() {
           </Pressable>
         </View>
       </ScrollView>
-    </View>
+    </ScreenBackground>
   );
 }
 
@@ -596,9 +811,17 @@ const styles = StyleSheet.create({
   statDivider: { width: 1, height: 36, borderRadius: 1 },
   sectionLabel: { fontSize: 11, letterSpacing: 1.8, marginBottom: 12 },
   cardGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 28 },
-  opCard: { width: "47.5%", borderRadius: 20, padding: 18, minHeight: 130, justifyContent: "flex-end" },
-  opIconBox: { width: 52, height: 52, borderRadius: 14, justifyContent: "center", alignItems: "center", marginBottom: 14 },
-  opLabel: { fontSize: 16, marginBottom: 4 },
+  opCard: { width: "47.5%", borderRadius: 20, overflow: "hidden", minHeight: 150 },
+  opCardBg: { flex: 1, minHeight: 150, justifyContent: "flex-end" },
+  opCardImage: { borderRadius: 20 },
+  opCardOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 20,
+    opacity: 0.92,
+  },
+  opCardContent: { padding: 16 },
+  opIconBox: { width: 44, height: 44, borderRadius: 12, justifyContent: "center", alignItems: "center", marginBottom: 10 },
+  opLabel: { fontSize: 16, marginBottom: 3 },
   opSubtitle: { fontSize: 12 },
   listCard: { borderRadius: 20, borderWidth: 1, overflow: "hidden", marginBottom: 28 },
   listRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, gap: 14 },
@@ -632,4 +855,24 @@ const styles = StyleSheet.create({
   aiInfoFeatureText: { fontSize: 12 },
   aiInfoLearnMore: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, padding: 12, borderRadius: 10, borderWidth: 1 },
   aiInfoLearnMoreText: { fontSize: 13 },
+
+  // Sales section styles
+  salesContent: { borderTopWidth: 1, paddingTop: 12, paddingBottom: 8 },
+  salesLoading: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 20 },
+  salesLoadingText: { fontSize: 13 },
+  salesStatsRow: { flexDirection: "row", gap: 8, paddingHorizontal: 12, marginBottom: 12 },
+  salesStatCard: { flex: 1, padding: 10, borderRadius: 12, borderWidth: 1, alignItems: "center" },
+  salesStatValue: { fontSize: 15, marginBottom: 2 },
+  salesStatLabel: { fontSize: 9, letterSpacing: 0.5 },
+  salesList: { paddingHorizontal: 12, paddingBottom: 4 },
+  salesSubtitle: { fontSize: 10, letterSpacing: 1.5, marginBottom: 10 },
+  salesItem: { flexDirection: "row", alignItems: "center", paddingVertical: 10, gap: 12 },
+  salesItemNameRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
+  salesItemName: { fontSize: 14, flexShrink: 1 },
+  adminBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  adminBadgeText: { fontSize: 9, fontWeight: "800" as const, letterSpacing: 0.5 },
+  salesItemDate: { fontSize: 12 },
+  salesItemAmount: { fontSize: 15 },
+  salesEmpty: { alignItems: "center", paddingVertical: 24, gap: 8 },
+  salesEmptyText: { fontSize: 13 },
 });

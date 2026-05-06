@@ -1,9 +1,9 @@
 'use client';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Image from 'next/image';
 import { useEffect, useRef } from 'react';
-import { useTheme } from '../context/ThemeContext';
+import { PhoneMockup } from './PhoneMockup';
+import { useTheme } from '@/context/ThemeContext';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -171,31 +171,29 @@ export default function Download() {
             </div>
 
             {/* Right — phone stack */}
-            <div ref={rightRef} className="relative flex-shrink-0 flex items-end justify-center gap-4 h-[480px]">
+            <div ref={rightRef} className="relative flex-shrink-0 flex items-end justify-center gap-4 h-[600px] lg:ml-32">
+
               {/* Back phone */}
               <div
-                className="dl-phone phone-frame absolute"
-                style={{ width: 200, height: 420, bottom: 0, left: '50%', transform: 'translateX(-120%) rotate(-8deg)', opacity: 0.6, zIndex: 1 }}
+                className="dl-phone absolute"
+                style={{ bottom: 0, left: '50%', transform: 'translateX(-120%) rotate(-8deg)', opacity: 0.6, zIndex: 1 }}
               >
-                <Image src={isDark ? '/images/analytics_dark.jpeg' : '/images/analytics.jpeg'} alt="Analytics screen" fill className="object-cover" />
+                <PhoneMockup width={200} src={isDark ? '/images/analytics_dark.jpeg' : '/images/analytics.jpeg'} alt="Analytics screen" />
               </div>
 
               {/* Front phone */}
-              <div
-                className="dl-phone phone-frame relative"
-                style={{ width: 240, height: 500, zIndex: 2 }}
-              >
-                <Image src={isDark ? '/images/inventory_dark.jpeg' : '/images/inventory.jpeg'} alt="Inventory screen" fill className="object-cover" />
-                <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 50%)', borderRadius: '44px' }} />
+              <div className="dl-phone relative" style={{ zIndex: 2 }}>
+                <PhoneMockup width={248} src={isDark ? '/images/inventory_dark.jpeg' : '/images/inventory.jpeg'} alt="Inventory screen" glare />
               </div>
 
               {/* Right phone */}
               <div
-                className="dl-phone phone-frame absolute"
-                style={{ width: 200, height: 420, bottom: 0, left: '50%', transform: 'translateX(20%) rotate(8deg)', opacity: 0.6, zIndex: 1 }}
+                className="dl-phone absolute"
+                style={{ bottom: 0, left: '50%', transform: 'translateX(20%) rotate(8deg)', opacity: 0.6, zIndex: 1 }}
               >
-                <Image src={isDark ? '/images/scan_dark.jpeg' : '/images/scan.jpeg'} alt="Scan screen" fill className="object-cover" />
+                <PhoneMockup width={200} src={isDark ? '/images/scan_dark.jpeg' : '/images/scan.jpeg'} alt="Scan screen" />
               </div>
+
             </div>
           </div>
         </div>

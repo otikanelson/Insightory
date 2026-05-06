@@ -390,7 +390,11 @@ exports.processSale = async (req, res) => {
           priceAtSale: batchUsed.price,
           totalAmount: batchUsed.price * batchUsed.quantity,
           saleDate: new Date(),
-          paymentMethod: item.paymentMethod || 'cash'
+          paymentMethod: item.paymentMethod || 'cash',
+          soldBy: {
+            userId: req.user.id,
+            role: req.user.role || 'staff',
+          },
         });
 
         saleRecords.push(saleRecord);

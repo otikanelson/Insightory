@@ -4,6 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { PhoneMockup } from './PhoneMockup';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -98,26 +99,19 @@ export default function Screenshots() {
           <div className="relative flex-shrink-0">
             {/* Glow */}
             <div
-              className="absolute inset-0 rounded-[44px]"
+              className="absolute inset-0"
               style={{
                 background: 'radial-gradient(ellipse at center, rgba(42,163,245,0.25) 0%, rgba(124,58,237,0.15) 50%, transparent 70%)',
                 filter: 'blur(40px)',
                 transform: 'scale(1.4)',
               }}
             />
-            <div ref={phoneRef} className="phone-frame relative" style={{ width: 280, height: 580 }}>
-              <Image
+            <div ref={phoneRef}>
+              <PhoneMockup
+                width={280}
                 src={isDark ? screens[active].dark : screens[active].light}
                 alt={screens[active].label}
-                fill
-                className="object-cover"
-              />
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%)',
-                  borderRadius: '44px',
-                }}
+                glare
               />
             </div>
           </div>

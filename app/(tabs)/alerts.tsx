@@ -1,3 +1,4 @@
+import { ModalToast, useModalToast } from "@/components/ModalToast";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -16,7 +17,6 @@ import { ThemedText } from '../../components/ThemedText';
 import { useTheme } from "../../context/ThemeContext";
 import { useAdminAuth } from "../../hooks/useAdminAuth";
 import { Alert, AlertAction, useAlerts } from "../../hooks/useAlerts";
-import { ModalToast, useModalToast } from "@/components/ModalToast";
 
 export default function Alerts() {
   const { theme } = useTheme();

@@ -9,14 +9,14 @@ import axios from "axios";
 import { Href, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  FlatList,
-  Image,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  View
+    FlatList,
+    Image,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from '../../components/ThemedText';
@@ -126,7 +126,7 @@ export default function InventoryScreen() {
   }, [filteredProducts, sortField, analytics]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.primary }}>
+    <ScreenBackground>
       {/* Blue Header */}
       <View style={[styles.blueHeader, { backgroundColor: theme.primary, paddingTop: insets.top + 16 }]}>
         <View style={styles.headerTop}>
@@ -328,7 +328,7 @@ export default function InventoryScreen() {
       >
         <Ionicons name="add" size={30} color="#FFF" />
       </Pressable>
-    </View>
+    </ScreenBackground>
   );
 }
 

@@ -1,8 +1,6 @@
 'use client';
 import { gsap } from 'gsap';
-import Image from 'next/image';
 import { useEffect, useRef } from 'react';
-import { useTheme } from '../context/ThemeContext';
 import GodRays from './GodRays';
 
 export default function Hero() {
@@ -10,9 +8,7 @@ export default function Hero() {
   const headlineRef = useRef<HTMLHeadingElement>(null);
   const subRef      = useRef<HTMLParagraphElement>(null);
   const ctasRef     = useRef<HTMLDivElement>(null);
-  const phoneRef    = useRef<HTMLDivElement>(null);
   const badgesRef   = useRef<HTMLDivElement>(null);
-  const { isDark }  = useTheme();
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -26,10 +22,7 @@ export default function Hero() {
       }
       tl.fromTo(subRef.current,   { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.3')
         .fromTo(ctasRef.current,  { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.4')
-        .fromTo(phoneRef.current, { y: 80, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 1, ease: 'power3.out' }, '-=0.6')
         .fromTo(badgesRef.current,{ y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.4');
-
-      gsap.to(phoneRef.current, { y: -16, duration: 3.5, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: 2 });
     }, sectionRef);
     return () => ctx.revert();
   }, []);
@@ -55,13 +48,6 @@ export default function Hero() {
       }} />
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 flex flex-col items-center text-center">
-
-        {/* Pill badge */}
-        <div className="mb-8 inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-sm font-medium border"
-          style={{ color: 'var(--primary)', borderColor: 'color-mix(in srgb, var(--primary) 20%, transparent)' }}>
-          <span className="w-2 h-2 rounded-full animate-pulse-slow" style={{ background: 'var(--primary)' }} />
-          Now available on <span style={{ opacity: 0.35 }}>iOS &</span> Android
-        </div>
 
         {/* Headline */}
         <h1 ref={headlineRef} className="text-5xl md:text-7xl lg:text-8xl font-black leading-[1.05] tracking-tight mb-6"
@@ -107,21 +93,6 @@ export default function Hero() {
             </svg>
             Download for Android
           </a>
-        </div>
-
-        {/* Phone mockup */}
-        <div ref={phoneRef} className="relative w-full max-w-xs mx-auto">
-          <div className="absolute inset-0 rounded-[44px]" style={{
-            background: 'radial-gradient(ellipse at center, color-mix(in srgb, var(--primary) 20%, transparent) 0%, color-mix(in srgb, var(--gradient2) 10%, transparent) 50%, transparent 70%)',
-            filter: 'blur(30px)', transform: 'scale(1.3)',
-          }} />
-          <div className="phone-frame relative mx-auto" style={{ width: 260, height: 540 }}>
-            <Image src={isDark ? '/images/dashboard_dark.jpeg' : '/images/dashboard.jpeg'} alt="Insightory App" fill className="object-cover" priority />
-            <div className="absolute inset-0 pointer-events-none" style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 50%)',
-              borderRadius: '44px',
-            }} />
-          </div>
         </div>
 
         {/* Trust badges */}

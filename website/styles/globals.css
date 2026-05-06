@@ -172,16 +172,27 @@ body {
 
 /* ── Phone mockup ── */
 .phone-frame {
-  border-radius: 44px;
-  border: 2px solid var(--border);
+  border-radius: 40px;
+  border: 1px solid #3a3a3a00;
+  padding: 6px;
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--primary) 10%, transparent),
-    0 40px 80px rgba(0,0,0,0.4),
-    0 0 60px color-mix(in srgb, var(--primary) 8%, transparent),
-    inset 0 1px 0 rgba(255,255,255,0.08);
+    0 0 0 1px rgba(255,255,255,0.06),
+    inset 0 0 0 1px rgba(255,255,255,0.10),
+    0 40px 80px rgba(0,0,0,0.55),
+    0 8px 24px rgba(0,0,0,0.4);
   overflow: hidden;
-  background: var(--surface);
-  transition: border-color 0.3s ease;
+  z-index: 5;
+  background: #111111;
+}
+
+[data-theme="light"] .phone-frame {
+  border: 2px solid #c0c0c0;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.8),
+    inset 0 0 0 1px rgba(255,255,255,0.6),
+    0 40px 80px rgba(0,0,0,0.25),
+    0 8px 24px rgba(0,0,0,0.15);
+  background: #e8e8e8;
 }
 
 /* ── Feature card hover ── */

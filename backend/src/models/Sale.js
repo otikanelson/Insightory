@@ -15,6 +15,10 @@ const SaleSchema = new mongoose.Schema({
   totalAmount: { type: Number, required: true }, // quantitySold * priceAtSale
   saleDate: { type: Date, default: Date.now },
   paymentMethod: { type: String, enum: ['cash', 'card', 'transfer'], default: 'cash' },
+  soldBy: {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    role: { type: String, enum: ['admin', 'staff'], default: 'staff' },
+  },
 }, { timestamps: true });
 
 // Indexes for multi-tenant analytics queries
