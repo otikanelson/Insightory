@@ -6,13 +6,13 @@ import axios from 'axios';
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  TextInput,
-  View
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    TextInput,
+    View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -185,11 +185,10 @@ export default function SecuritySettingsScreen() {
         return;
       }
       const token = await AsyncStorage.getItem('auth_session_token');
-      const storedSecurity = await AsyncStorage.getItem('admin_security_pin');
       await axios.put(`${API_URL}/auth/admin/pin`, {
-        oldPin: storedSecurity || '',
         newPin: newSecurityPin,
         pinType: 'security',
+        // No oldPin — backend allows omitting it when no security PIN exists yet
       }, { headers: { Authorization: `Bearer ${token}` } });
       await AsyncStorage.setItem('admin_security_pin', newSecurityPin);
       setHasSecurityPin(true);

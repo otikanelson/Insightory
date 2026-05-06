@@ -589,7 +589,8 @@ export default function ScanScreen() {
   const handlePinSubmit = async () => {
     try {
       // Get storeId — prefer context (always fresh), fall back to AsyncStorage
-      const storeId = user?.storeId || await AsyncStorage.getItem('auth_store_id');
+      const rawStoreId = user?.storeId || await AsyncStorage.getItem('auth_store_id');
+      const storeId = rawStoreId ? rawStoreId.toString() : null;
 
       if (!storeId) {
         modalToast.show({ type: "error", title: "Store Not Found", message: "Could not identify store. Please log out and log back in." });
@@ -617,18 +618,25 @@ export default function ScanScreen() {
         setAdminPin("");
       }
     } catch (error: any) {
-      // 401 = wrong PIN, anything else = network/server error
-      if (error?.response?.status === 401) {
+      const status = error?.response?.status;
+      const serverMsg = error?.response?.data?.error;
+      console.error("PIN verification error — status:", status, "message:", serverMsg, "raw:", error?.message);
+
+      if (status === 401) {
         modalToast.show({ type: "error", title: "Access Denied", message: "Incorrect Security PIN" });
         setAdminPin("");
-      } else if (error?.response?.status === 404) {
+      } else if (status === 404) {
         modalToast.show({ type: "error", title: "Security PIN Not Set", message: "Please set up admin security PIN in settings first" });
         setPinModal(false);
         setAdminPin("");
         setScanned(false);
+      } else if (status === 400) {
+        modalToast.show({ type: "error", title: "Invalid Request", message: serverMsg || "Missing PIN or store ID" });
+        setPinModal(false);
+        setAdminPin("");
+        setScanned(false);
       } else {
-        console.error("PIN verification error:", error);
-        modalToast.show({ type: "error", title: "Authentication Error", message: "Could not verify PIN. Check your connection." });
+        modalToast.show({ type: "error", title: "Authentication Error", message: serverMsg || "Could not verify PIN. Check your connection." });
         setPinModal(false);
         setAdminPin("");
         setScanned(false);
@@ -1080,7 +1088,8 @@ export default function ScanScreen() {
                 marginBottom: 20,
               }}
             >
-              Enter admin PIN to register new product
+              Enter the admin's <ThemedText style={{ color: theme.primary, fontWeight: "700" }}>Security PIN</ThemedText> to register a new product.{"\n"}
+              <ThemedText style={{ fontSize: 11 }}>This is different from the login PIN.</ThemedText>
             </ThemedText>
             <TextInput
               style={[

@@ -1049,10 +1049,19 @@ exports.updateAdminPin = async (req, res) => {
   try {
     const { oldPin, newPin, pinType } = req.body; // pinType: 'login' or 'security'
 
-    if (!oldPin || !newPin || !pinType) {
+    // oldPin is optional for security PIN first-time setup (when no PIN exists yet)
+    if (!newPin || !pinType) {
       return res.status(400).json({
         success: false,
-        error: 'Old PIN, new PIN, and PIN type are required'
+        error: 'New PIN and PIN type are required'
+      });
+    }
+
+    // Login PIN always requires oldPin
+    if (pinType === 'login' && !oldPin) {
+      return res.status(400).json({
+        success: false,
+        error: 'Current Login PIN is required'
       });
     }
 
@@ -1105,12 +1114,24 @@ exports.updateAdminPin = async (req, res) => {
         message: 'Login PIN updated successfully'
       });
     } else if (pinType === 'security') {
-      if (admin.securityPin !== oldPin) {
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid current Security PIN'
-        });
+      const hasExistingPin = admin.securityPin && admin.securityPin.length === 4;
+
+      if (hasExistingPin) {
+        // Existing PIN — require old PIN to verify
+        if (!oldPin) {
+          return res.status(400).json({
+            success: false,
+            error: 'Current Security PIN is required to update it'
+          });
+        }
+        if (admin.securityPin !== oldPin) {
+          return res.status(401).json({
+            success: false,
+            error: 'Invalid current Security PIN'
+          });
+        }
       }
+      // No existing PIN — first-time setup, no verification needed
 
       // Update Security PIN
       admin.securityPin = newPin;
@@ -1118,7 +1139,7 @@ exports.updateAdminPin = async (req, res) => {
 
       res.json({
         success: true,
-        message: 'Security PIN updated successfully'
+        message: hasExistingPin ? 'Security PIN updated successfully' : 'Security PIN created successfully'
       });
     } else {
       return res.status(400).json({
