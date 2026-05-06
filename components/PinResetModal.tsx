@@ -1,10 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 import React from 'react';
 import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { ModalToast, useModalToast } from './ModalToast';
 import { ThemedText } from './ThemedText';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 interface PinResetModalProps {
   visible: boolean;
@@ -19,52 +22,55 @@ export function PinResetModal({
   onClose,
   onSuccess,
   title = 'Reset Security PIN',
-  message = 'Enter your Login PIN to remove the current Security PIN. You can set a new one in settings.',
+  message = 'Enter your Login PIN to verify identity, then set a new Security PIN.',
 }: PinResetModalProps) {
   const { theme } = useTheme();
   const toast = useModalToast();
   const [loginPin, setLoginPin] = React.useState('');
+  const [newSecurityPin, setNewSecurityPin] = React.useState('');
+  const [confirmSecurityPin, setConfirmSecurityPin] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
 
   const handleReset = async () => {
     if (loginPin.length !== 4) {
-      toast.show({ type: 'error', title: 'Invalid PIN', message: 'Please enter your 4-digit Login PIN' });
+      toast.show({ type: 'error', title: 'Invalid PIN', message: 'Enter your 4-digit Login PIN' });
+      return;
+    }
+    if (newSecurityPin.length !== 4 || !/^\d{4}$/.test(newSecurityPin)) {
+      toast.show({ type: 'error', title: 'Invalid PIN', message: 'New Security PIN must be 4 digits' });
+      return;
+    }
+    if (newSecurityPin !== confirmSecurityPin) {
+      toast.show({ type: 'error', title: 'PIN Mismatch', message: 'New PINs do not match' });
       return;
     }
 
     setIsLoading(true);
     try {
-      const storedLoginPin = await AsyncStorage.getItem('admin_login_pin');
+      const token = await AsyncStorage.getItem('auth_session_token');
 
-      if (!storedLoginPin) {
-        toast.show({
-          type: 'error',
-          title: 'Session Expired',
-          message: 'Log out and log back in, then try again',
-        });
-        setIsLoading(false);
-        return;
-      }
+      // Use the reset endpoint — verifies via login PIN, sets new security PIN in DB
+      await axios.post(
+        `${API_URL}/auth/admin/reset-security-pin`,
+        { loginPin, newSecurityPin },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-      if (loginPin !== storedLoginPin) {
-        toast.show({ type: 'error', title: 'Incorrect Login PIN', message: 'The PIN you entered is wrong' });
-        setIsLoading(false);
-        return;
-      }
+      // Update local cache
+      await AsyncStorage.setItem('admin_security_pin', newSecurityPin);
+      await AsyncStorage.setItem('admin_last_auth', Date.now().toString());
 
-      await AsyncStorage.removeItem('admin_security_pin');
-      await AsyncStorage.removeItem('admin_last_auth');
+      toast.show({ type: 'success', title: 'Security PIN Reset', message: 'New Security PIN is active' });
 
-      toast.show({ type: 'success', title: 'Security PIN Removed', message: 'Set a new one in settings' });
-
-      // Small delay so user sees the success toast before modal closes
       setTimeout(() => {
         setLoginPin('');
+        setNewSecurityPin('');
+        setConfirmSecurityPin('');
         onSuccess();
       }, 1200);
-    } catch (error) {
-      console.error('Error resetting Security PIN:', error);
-      toast.show({ type: 'error', title: 'Reset Failed', message: 'Could not remove Security PIN' });
+    } catch (error: any) {
+      const msg = error?.response?.data?.error || 'Could not reset Security PIN';
+      toast.show({ type: 'error', title: 'Reset Failed', message: msg });
     } finally {
       setIsLoading(false);
     }
@@ -72,8 +78,12 @@ export function PinResetModal({
 
   const handleClose = () => {
     setLoginPin('');
+    setNewSecurityPin('');
+    setConfirmSecurityPin('');
     onClose();
   };
+
+  const canSubmit = loginPin.length === 4 && newSecurityPin.length === 4 && confirmSecurityPin.length === 4 && !isLoading;
 
   return (
     <Modal visible={visible} transparent animationType="fade">
@@ -84,20 +94,12 @@ export function PinResetModal({
           </View>
 
           <ThemedText style={[styles.modalTitle, { color: theme.text }]}>{title}</ThemedText>
-
           <ThemedText style={[styles.modalMessage, { color: theme.subtext }]}>{message}</ThemedText>
 
           <View style={styles.inputContainer}>
-            <ThemedText style={[styles.inputLabel, { color: theme.text }]}>Enter Login PIN:</ThemedText>
+            <ThemedText style={[styles.inputLabel, { color: theme.subtext }]}>Login PIN (to verify it's you)</ThemedText>
             <TextInput
-              style={[styles.textInput, {
-                backgroundColor: theme.background,
-                borderColor: theme.border,
-                color: theme.text,
-                textAlign: 'center',
-                fontSize: 18,
-                letterSpacing: 8,
-              }]}
+              style={[styles.textInput, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
               value={loginPin}
               onChangeText={setLoginPin}
               placeholder="••••"
@@ -109,13 +111,37 @@ export function PinResetModal({
             />
           </View>
 
+          <View style={styles.inputContainer}>
+            <ThemedText style={[styles.inputLabel, { color: theme.subtext }]}>New Security PIN</ThemedText>
+            <TextInput
+              style={[styles.textInput, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
+              value={newSecurityPin}
+              onChangeText={setNewSecurityPin}
+              placeholder="••••"
+              placeholderTextColor={theme.subtext}
+              keyboardType="numeric"
+              maxLength={4}
+              secureTextEntry
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <ThemedText style={[styles.inputLabel, { color: theme.subtext }]}>Confirm New Security PIN</ThemedText>
+            <TextInput
+              style={[styles.textInput, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
+              value={confirmSecurityPin}
+              onChangeText={setConfirmSecurityPin}
+              placeholder="••••"
+              placeholderTextColor={theme.subtext}
+              keyboardType="numeric"
+              maxLength={4}
+              secureTextEntry
+            />
+          </View>
+
           <View style={styles.modalActions}>
             <Pressable
-              style={[styles.modalBtn, {
-                backgroundColor: theme.background,
-                borderWidth: 1,
-                borderColor: theme.border,
-              }]}
+              style={[styles.modalBtn, { backgroundColor: theme.background, borderWidth: 1, borderColor: theme.border }]}
               onPress={handleClose}
               disabled={isLoading}
             >
@@ -123,22 +149,17 @@ export function PinResetModal({
             </Pressable>
 
             <Pressable
-              style={[styles.modalBtn, {
-                backgroundColor: loginPin.length === 4 && !isLoading ? theme.primary : theme.border,
-                opacity: loginPin.length === 4 && !isLoading ? 1 : 0.5,
-              }]}
+              style={[styles.modalBtn, { backgroundColor: canSubmit ? theme.primary : theme.border, opacity: canSubmit ? 1 : 0.5 }]}
               onPress={handleReset}
-              disabled={loginPin.length !== 4 || isLoading}
+              disabled={!canSubmit}
             >
-              {isLoading
-                ? <ThemedText style={{ color: '#FFF' }}>Removing...</ThemedText>
-                : <ThemedText style={{ color: '#FFF' }}>Remove PIN</ThemedText>
-              }
+              <ThemedText style={{ color: '#FFF' }}>
+                {isLoading ? 'Resetting...' : 'Reset PIN'}
+              </ThemedText>
             </Pressable>
           </View>
         </View>
 
-        {/* Toast rendered inside the Modal layer */}
         <ModalToast toast={toast} />
       </View>
     </Modal>
@@ -177,24 +198,26 @@ const styles = StyleSheet.create({
   modalMessage: {
     fontSize: 14,
     textAlign: 'center',
-    marginBottom: 25,
+    marginBottom: 20,
     lineHeight: 20,
   },
   inputContainer: {
     width: '100%',
-    marginBottom: 20,
+    marginBottom: 14,
   },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
+    fontSize: 12,
+    marginBottom: 6,
+    letterSpacing: 0.3,
   },
   textInput: {
     height: 50,
     borderWidth: 1,
     borderRadius: 15,
     paddingHorizontal: 15,
-    fontSize: 16,
+    fontSize: 18,
+    textAlign: 'center',
+    letterSpacing: 8,
   },
   modalActions: {
     flexDirection: 'row',

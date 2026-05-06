@@ -1190,6 +1190,41 @@ exports.removeAdminSecurityPin = async (req, res) => {
   }
 };
 
+// Reset security PIN using login PIN as verification (recovery flow)
+exports.resetSecurityPinWithLoginPin = async (req, res) => {
+  try {
+    const { loginPin, newSecurityPin } = req.body;
+
+    if (!loginPin || !newSecurityPin) {
+      return res.status(400).json({ success: false, error: 'Login PIN and new Security PIN are required' });
+    }
+
+    if (newSecurityPin.length !== 4 || !/^\d{4}$/.test(newSecurityPin)) {
+      return res.status(400).json({ success: false, error: 'New Security PIN must be exactly 4 digits' });
+    }
+
+    const admin = await User.findOne({ _id: req.user.id, role: 'admin' });
+    if (!admin) {
+      return res.status(404).json({ success: false, error: 'Admin not found' });
+    }
+
+    // Verify using login PIN — the one thing the admin always knows
+    if (admin.loginPin !== loginPin) {
+      return res.status(401).json({ success: false, error: 'Incorrect Login PIN' });
+    }
+
+    admin.securityPin = newSecurityPin;
+    await admin.save();
+
+    console.log('🔐 resetSecurityPinWithLoginPin — PIN reset for admin:', admin._id);
+
+    res.json({ success: true, message: 'Security PIN reset successfully' });
+  } catch (error) {
+    console.error('Reset security PIN error:', error);
+    res.status(500).json({ success: false, error: 'Failed to reset security PIN' });
+  }
+};
+
 // Delete admin account (admin deletes their own account)
 exports.deleteAdminAccount = async (req, res) => {
   try {

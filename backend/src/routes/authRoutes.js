@@ -64,6 +64,9 @@ router.put('/admin/pin', authenticate, authController.updateAdminPin);
 // Remove admin security PIN (clears it from DB)
 router.delete('/admin/security-pin', authenticate, authController.removeAdminSecurityPin);
 
+// Emergency: reset security PIN using login PIN as verification
+router.post('/admin/reset-security-pin', authenticate, authController.resetSecurityPinWithLoginPin);
+
 // Delete accounts
 router.delete('/admin/account', authenticate, authController.deleteAdminAccount);
 router.delete('/staff/account', authenticate, authController.deleteStaffAccount);

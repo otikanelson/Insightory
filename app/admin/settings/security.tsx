@@ -409,16 +409,15 @@ export default function SecuritySettingsScreen() {
             </SettingRow>
           )}
 
-          {hasSecurityPin && (
-            <SettingRow
-              icon="help-circle-outline"
-              label="Forgot Security PIN?"
-              description="Reset Security PIN using your Login PIN"
-              onPress={() => setShowPinResetModal(true)}
-            >
-              <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
-            </SettingRow>
-          )}
+          {/* Always show reset option — covers both "forgot PIN" and "stuck with wrong PIN in DB" */}
+          <SettingRow
+            icon="help-circle-outline"
+            label="Forgot / Reset Security PIN?"
+            description="Reset Security PIN using your Login PIN"
+            onPress={() => setShowPinResetModal(true)}
+          >
+            <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
+          </SettingRow>
 
           {!hasSecurityPin && (
             <View style={[styles.warningBanner, { backgroundColor: '#FF9500' + '15', borderColor: '#FF9500' }]}>
@@ -716,7 +715,7 @@ export default function SecuritySettingsScreen() {
         onClose={() => setShowPinResetModal(false)}
         onSuccess={() => {
           setShowPinResetModal(false);
-          setHasSecurityPin(false);
+          setHasSecurityPin(true);
           loadSettings(); // Refresh settings
         }}
       />
