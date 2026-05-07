@@ -5,13 +5,15 @@ import { View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '../components/CustomToast';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { SetupGuideOverlay } from '../components/SetupGuideOverlay';
 import { SplashScreenAnimation } from '../components/SplashScreenAnimation';
 import { TourOverlay } from '../components/TourOverlay';
+import { AppReadyProvider, useAppReady } from '../context/AppReadyContext';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { SetupGuideProvider } from '../context/SetupGuideContext';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { TourProvider } from '../context/TourContext';
 import { useFonts } from '../hooks/useFonts';
-// Import axios configuration to set up interceptors
 import '../utils/axiosConfig';
 
 
@@ -100,11 +102,10 @@ function RootLayoutNav() {
     const inAuthorGroup = segments[0] === 'author';
     const inOnboardingGroup = segments[0] === 'onboarding';
     const isStaffRegister = segments[1] === 'staff-register';
-    const isInSetup = segments[1] === 'setup';
-    const isInLogin = segments[1] === 'login';
 
-    // If onboarding hasn't been seen yet, send there first (unless already there)
-    if (!onboardingComplete && !inOnboardingGroup && !inAuthorGroup) {
+    // If onboarding hasn't been seen yet, send there first (unless already there or in auth)
+    // IMPORTANT: Skip this check entirely if the user is already authenticated
+    if (!isAuthenticated && !onboardingComplete && !inOnboardingGroup && !inAuthorGroup && !inAuthGroup) {
       hasNavigatedRef.current = true;
       router.replace('/onboarding' as any);
       return;
@@ -214,6 +215,15 @@ function ThemedToast() {
   );
 }
 
+// Notifies AppReadyContext once the splash is gone
+function SplashDoneNotifier({ showSplash }: { showSplash: boolean }) {
+  const { setSplashDone } = useAppReady();
+  useEffect(() => {
+    if (!showSplash) setSplashDone();
+  }, [showSplash]);
+  return null;
+}
+
 export default function RootLayout() {
   const [showSplash, setShowSplash] = useState(true);
   const fontsLoaded = useFonts();
@@ -225,17 +235,25 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <AuthProvider>
-          <TourProvider>
-            <RootLayoutNav />
-            {showSplash && (
-              <SplashScreenAnimation onFinish={() => setShowSplash(false)} />
-            )}
-            <ThemedToast />
-          </TourProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <AppReadyProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <SetupGuideProvider>
+              <TourProvider>
+                <RootLayoutNav />
+                {showSplash && (
+                  <SplashScreenAnimation onFinish={() => {
+                    setShowSplash(false);
+                  }} />
+                )}
+                <SplashDoneNotifier showSplash={showSplash} />
+                <SetupGuideOverlay />
+                <ThemedToast />
+              </TourProvider>
+            </SetupGuideProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </AppReadyProvider>
     </ErrorBoundary>
   );
 }

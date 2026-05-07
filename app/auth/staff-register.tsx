@@ -1,18 +1,21 @@
+import { useSetupGuide } from '@/context/SetupGuideContext';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    TextInput,
-    View
+  BackHandler,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  TextInput,
+  View
 } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { PinInput } from '../../components/PinInput';
 import { ThemedText } from '../../components/ThemedText';
@@ -30,16 +33,49 @@ interface Permissions {
 
 export default function StaffRegisterScreen() {
   const { theme } = useTheme();
+  const { showStep, isActive, startGuide } = useSetupGuide();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   
   const [step, setStep] = useState<RegistrationStep>('store-verify');
+
+  // Auto-start guide when component mounts
+  useEffect(() => {
+    // Small delay to ensure layout is ready
+    const timer = setTimeout(() => {
+      startGuide('staff');
+      showStep('store-verify');
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Handle Android back button
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (step === 'store-verify') {
+        // Go back to setup page
+        router.back();
+        return true;
+      } else {
+        // Navigate back through steps
+        handleBack();
+        return true;
+      }
+    });
+
+    return () => backHandler.remove();
+  }, [step]);
+
+  const goToStep = (s: RegistrationStep) => {
+    setStep(s);
+    if (isActive) showStep(s);
+  };
   const [storeName, setStoreName] = useState('');
   const [adminLoginPin, setAdminLoginPin] = useState('');
   const [adminPinKey, setAdminPinKey] = useState(0);
   const [verifyingStore, setVerifyingStore] = useState(false);
   const [staffName, setStaffName] = useState('');
   const [staffPin, setStaffPin] = useState('');
-  const [confirmPin, setConfirmPin] = useState('');
   const [pinError, setPinError] = useState(false);
   const [isFirstPin, setIsFirstPin] = useState(true);
   const [pinKey, setPinKey] = useState(0);
@@ -66,7 +102,6 @@ export default function StaffRegisterScreen() {
           setPinError(true);
           setIsFirstPin(true);
           setStaffPin('');
-          setConfirmPin('');
           setPinKey(prev => prev + 1);
           Toast.show({
             type: 'error',
@@ -79,7 +114,6 @@ export default function StaffRegisterScreen() {
 
         try {
           const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api';
-          const adminId = await AsyncStorage.getItem('auth_user_id');
           
           const requestData = {
             name: staffName,
@@ -108,7 +142,7 @@ export default function StaffRegisterScreen() {
               text2: `${staffName} has been registered successfully`,
             });
 
-            setStep('complete');
+            goToStep('complete');
           } else {
             throw new Error('Backend returned unsuccessful response');
           }
@@ -142,14 +176,12 @@ export default function StaffRegisterScreen() {
           setPinError(true);
           setIsFirstPin(true);
           setStaffPin('');
-          setConfirmPin('');
           setPinKey(prev => prev + 1);
         }
       } else {
         setPinError(true);
         setIsFirstPin(true);
         setStaffPin('');
-        setConfirmPin('');
         setPinKey(prev => prev + 1);
       }
     }
@@ -171,9 +203,9 @@ export default function StaffRegisterScreen() {
         });
         return;
       }
-      setStep('permissions');
+      goToStep('permissions');
     } else if (step === 'permissions') {
-      setStep('pin');
+      goToStep('pin');
     } else if (step === 'complete') {
       router.replace('/auth/login' as any);
     }
@@ -195,7 +227,7 @@ export default function StaffRegisterScreen() {
       });
       if (response.data.success) {
         setAdminLoginPin(pin);
-        setStep('name');
+        goToStep('name');
       } else {
         Toast.show({ type: 'error', text1: 'Verification Failed', text2: response.data.error || 'Invalid store or admin PIN' });
         setAdminPinKey(prev => prev + 1);
@@ -211,20 +243,20 @@ export default function StaffRegisterScreen() {
 
   const handleBack = () => {
     if (step === 'store-verify') {
-      router.replace('/auth/login' as any);
+      router.back(); // Go back to setup page
     } else if (step === 'name') {
       setStep('store-verify');
       setAdminLoginPin('');
       setAdminPinKey(prev => prev + 1);
+      showStep('store-verify');
     } else if (step === 'pin') {
-      setStep('permissions');
+      goToStep('permissions');
       setIsFirstPin(true);
       setStaffPin('');
-      setConfirmPin('');
       setPinError(false);
       setPinKey(prev => prev + 1);
     } else if (step === 'permissions') {
-      setStep('name');
+      goToStep('name');
     } else {
       router.replace('/auth/login' as any);
     }
@@ -260,7 +292,8 @@ export default function StaffRegisterScreen() {
         keyboardVerticalOffset={0}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: Math.max(insets.top, 20) }]}
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
@@ -414,7 +447,6 @@ export default function StaffRegisterScreen() {
                       if (!isFirstPin) {
                         setIsFirstPin(true);
                         setStaffPin('');
-                        setConfirmPin('');
                         setPinKey(prev => prev + 1);
                       }
                     }}
@@ -492,7 +524,7 @@ export default function StaffRegisterScreen() {
 
           {/* Footer Button */}
           {(step === 'name' || step === 'permissions' || step === 'complete') && (
-            <View style={styles.footer}>
+            <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
               <Pressable
                 style={[styles.continueButton, { backgroundColor: theme.primary }]}
                 onPress={handleContinue}
@@ -520,13 +552,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingTop: 60,
+    paddingBottom: 20,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     marginBottom: 30,
+    marginTop: 20,
   },
   backButton: {
     padding: 10,

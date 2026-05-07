@@ -67,7 +67,12 @@ export default function ProfileScreen() {
 
       if (data.success) {
         modalToast.show({ type: 'success', title: 'Account Deleted', message: 'Your account has been permanently deleted' });
+        // Preserve onboarding completion status before clearing
+        const onboardingComplete = await AsyncStorage.getItem('onboarding_complete');
         await AsyncStorage.clear();
+        if (onboardingComplete) {
+          await AsyncStorage.setItem('onboarding_complete', onboardingComplete);
+        }
         setTimeout(() => router.replace('/auth/setup' as any), 1500);
       } else {
         modalToast.show({ type: 'error', title: 'Delete Failed', message: data.error || 'Could not delete account' });

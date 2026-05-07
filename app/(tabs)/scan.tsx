@@ -923,6 +923,15 @@ export default function ScanScreen() {
             </View>
 
             <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Pressable
+                onPress={() => setTorch(!torch)}
+                style={[
+                  styles.iconCircle,
+                  torch && { backgroundColor: "rgba(255,255,255,0.4)" },
+                ]}
+              >
+                <Ionicons name={torch ? "flash" : "flash-off"} size={24} color="#FFF" />
+              </Pressable>
             </View>
           </View>
 
@@ -1159,36 +1168,36 @@ export default function ScanScreen() {
 
       {/* CART MODAL */}
       <Modal visible={showCartModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
+        <View style={styles.cartModalOverlay}>
           <View style={[styles.cartModalContent, { backgroundColor: theme.surface }]}>
-            {/* Modal Header */}
+
+            {/* Handle bar */}
+            <View style={[styles.cartHandle, { backgroundColor: theme.border }]} />
+
+            {/* Header */}
             <View style={styles.cartModalHeader}>
               <View>
                 <ThemedText style={[styles.cartModalTitle, { color: theme.text }]}>
-                  Shopping Cart
+                  Cart
                 </ThemedText>
                 <ThemedText style={[styles.cartModalSubtitle, { color: theme.subtext }]}>
-                  {cart.length} {cart.length === 1 ? "item" : "items"} • {getTotalItems()} total units
+                  {cart.length} {cart.length === 1 ? "product" : "products"} · {getTotalItems()} units
                 </ThemedText>
               </View>
               <Pressable
                 onPress={() => setShowCartModal(false)}
                 style={[styles.cartCloseBtn, { backgroundColor: theme.background }]}
               >
-                <Ionicons name="close" size={24} color={theme.text} />
+                <Ionicons name="close" size={20} color={theme.text} />
               </Pressable>
             </View>
 
-            {/* Cart Items List */}
+            {/* Items */}
             {cart.length === 0 ? (
               <View style={styles.emptyCart}>
-                <Ionicons name="cart-outline" size={80} color={theme.subtext + "40"} />
-                <ThemedText style={[styles.emptyCartText, { color: theme.subtext }]}>
-                  Cart is empty
-                </ThemedText>
-                <ThemedText style={[styles.emptyCartHint, { color: theme.subtext }]}>
-                  Scan products to add them
-                </ThemedText>
+                <Ionicons name="cart-outline" size={64} color={theme.subtext + "40"} />
+                <ThemedText style={[styles.emptyCartText, { color: theme.subtext }]}>Cart is empty</ThemedText>
+                <ThemedText style={[styles.emptyCartHint, { color: theme.subtext }]}>Scan products to add them</ThemedText>
               </View>
             ) : (
               <FlatList
@@ -1196,89 +1205,71 @@ export default function ScanScreen() {
                 keyExtractor={(item: CartItem) => item._id}
                 style={styles.cartList}
                 contentContainerStyle={styles.cartListContent}
+                showsVerticalScrollIndicator={false}
                 renderItem={({ item }: { item: CartItem }) => (
-                  <View
-                    style={[
-                      styles.cartItem,
-                      { backgroundColor: theme.background, borderColor: theme.border },
-                    ]}
-                  >
-                    {/* Product Image */}
+                  <View style={[styles.cartItem, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                    {/* Image */}
                     <View style={[styles.cartItemImage, { backgroundColor: theme.surface }]}>
                       {item.imageUrl && item.imageUrl !== "cube" ? (
-                        <Image
-                          source={{ uri: item.imageUrl }}
-                          style={styles.cartProductImage}
-                        />
+                        <Image source={{ uri: item.imageUrl }} style={styles.cartProductImage} resizeMode="contain" />
                       ) : (
-                        <Ionicons name="cube-outline" size={32} color={theme.subtext} />
+                        <Ionicons name="cube-outline" size={26} color={theme.subtext} />
                       )}
                     </View>
 
-                    {/* Product Info */}
+                    {/* Name + stock */}
                     <View style={styles.cartItemInfo}>
-                      <ThemedText style={[styles.cartItemName, { color: theme.text }]} numberOfLines={1}>
+                      <ThemedText style={[styles.cartItemName, { color: theme.text }]} numberOfLines={2}>
                         {item.name}
                       </ThemedText>
                       <ThemedText style={[styles.cartItemMeta, { color: theme.subtext }]}>
-                        Stock: {item.totalQuantity} units
+                        {item.totalQuantity} in stock
                       </ThemedText>
                     </View>
 
-                    {/* Quantity Controls */}
-                    <View style={styles.cartQtyControls}>
+                    {/* Right side: qty + delete */}
+                    <View style={styles.cartItemRight}>
+                      <View style={[styles.cartQtyControls, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                        <Pressable
+                          style={styles.cartQtyBtn}
+                          onPress={() => updateCartQuantity(item._id, -1)}
+                          hitSlop={8}
+                        >
+                          <Ionicons name="remove" size={16} color={theme.text} />
+                        </Pressable>
+                        <ThemedText style={[styles.cartQtyText, { color: theme.text }]}>
+                          {item.quantity}
+                        </ThemedText>
+                        <Pressable
+                          style={styles.cartQtyBtn}
+                          onPress={() => updateCartQuantity(item._id, 1)}
+                          hitSlop={8}
+                        >
+                          <Ionicons name="add" size={16} color={theme.text} />
+                        </Pressable>
+                      </View>
                       <Pressable
-                        style={[
-                          styles.cartQtyBtn, 
-                          { 
-                            backgroundColor: theme.surface,
-                            borderWidth: 1,
-                            borderColor: theme.border,
-                          }
-                        ]}
-                        onPress={() => updateCartQuantity(item._id, -1)}
+                        style={styles.cartRemoveBtn}
+                        onPress={() => removeFromCart(item._id)}
+                        hitSlop={8}
                       >
-                        <Ionicons name="remove" size={16} color={theme.text} />
-                      </Pressable>
-                      <ThemedText style={[styles.cartQtyText, { color: theme.text }]}>
-                        {item.quantity}
-                      </ThemedText>
-                      <Pressable
-                        style={[
-                          styles.cartQtyBtn, 
-                          { 
-                            backgroundColor: theme.surface,
-                            borderWidth: 1,
-                            borderColor: theme.border,
-                          }
-                        ]}
-                        onPress={() => updateCartQuantity(item._id, 1)}
-                      >
-                        <Ionicons name="add" size={16} color={theme.text} />
+                        <Ionicons name="trash-outline" size={18} color="#FF3B30" />
                       </Pressable>
                     </View>
-
-                    {/* Remove Button */}
-                    <Pressable
-                      style={styles.cartRemoveBtn}
-                      onPress={() => removeFromCart(item._id)}
-                    >
-                      <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                    </Pressable>
                   </View>
                 )}
               />
             )}
 
-            {/* Done Button */}
+            {/* Checkout button */}
             {cart.length > 0 && (
               <Pressable
                 style={[styles.cartDoneButton, { backgroundColor: theme.primary }]}
                 onPress={handleCartDone}
               >
-                <Ionicons name="checkmark-circle" size={24} color="#FFF" />
+                <Ionicons name="checkmark-circle" size={22} color="#FFF" />
                 <ThemedText style={styles.cartDoneButtonText}>
-                  Proceed to Checkout ({getTotalItems()} items)
+                  Checkout · {getTotalItems()} {getTotalItems() === 1 ? "unit" : "units"}
                 </ThemedText>
               </Pressable>
             )}
@@ -1523,6 +1514,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  cartModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.85)",
+    justifyContent: "flex-end",
+  },
   modalContent: {
     width: "80%",
     padding: 25,
@@ -1668,28 +1664,37 @@ const styles = StyleSheet.create({
 
   // Cart Modal Styles
   cartModalContent: {
-    height: height * 0.75,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    height: height * 0.72,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     padding: 20,
+    paddingTop: 12,
+  },
+  cartHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 16,
   },
   cartModalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 20,
+    alignItems: "center",
+    marginBottom: 16,
   },
   cartModalTitle: {
-    fontSize: 24,
-    },
+    fontSize: 22,
+    fontWeight: "700",
+  },
   cartModalSubtitle: {
-    fontSize: 13,
-    marginTop: 4,
+    fontSize: 12,
+    marginTop: 3,
   },
   cartCloseBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1699,75 +1704,80 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    gap: 10,
   },
   emptyCartText: {
-    fontSize: 18,
-    marginTop: 20,
+    fontSize: 16,
+    fontWeight: "600",
   },
   emptyCartHint: {
-    fontSize: 14,
-    marginTop: 8,
+    fontSize: 13,
   },
 
   // Cart List
-  cartList: {
-    flex: 1,
-  },
-  cartListContent: {
-    paddingBottom: 20,
-  },
+  cartList: { flex: 1 },
+  cartListContent: { paddingBottom: 12 },
+
   cartItem: {
     flexDirection: "row",
     alignItems: "center",
     padding: 12,
     borderRadius: 16,
-    marginBottom: 12,
+    marginBottom: 10,
     borderWidth: 1,
+    gap: 10,
   },
   cartItemImage: {
-    width: 50,
-    height: 50,
+    width: 52,
+    height: 52,
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    flexShrink: 0,
+    overflow: "hidden",
   },
   cartProductImage: {
     width: "100%",
     height: "100%",
-    borderRadius: 12,
   },
   cartItemInfo: {
     flex: 1,
-    marginRight: 12,
+    minWidth: 0, // critical — prevents text overflow causing rotation
   },
   cartItemName: {
-    fontSize: 15,
-    marginBottom: 4,
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 3,
   },
   cartItemMeta: {
-    fontSize: 12,
-    },
+    fontSize: 11,
+  },
+  cartItemRight: {
+    alignItems: "center",
+    gap: 8,
+    flexShrink: 0,
+  },
   cartQtyControls: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    overflow: "hidden",
   },
   cartQtyBtn: {
     width: 32,
     height: 32,
-    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
   },
   cartQtyText: {
-    fontSize: 16,
-    minWidth: 30,
+    fontSize: 15,
+    fontWeight: "700",
+    minWidth: 28,
     textAlign: "center",
   },
   cartRemoveBtn: {
-    padding: 8,
-    marginLeft: 8,
+    padding: 4,
   },
 
   // Done Button

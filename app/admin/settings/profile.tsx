@@ -174,7 +174,7 @@ export default function AdminProfileScreen() {
   const confirmLogout = async () => {
     await logout();
     setShowLogoutModal(false);
-    router.replace('/auth/setup' as any);
+    router.replace('/auth/login' as any);
   };
 
   const handleDeleteAccount = async () => {
@@ -207,7 +207,12 @@ export default function AdminProfileScreen() {
       const data = await response.json();
       if (data.success) {
         modalToast.show({ type: 'success', title: 'Account Deleted', message: 'Your account and store have been permanently deleted' });
+        // Preserve onboarding completion status before clearing
+        const onboardingComplete = await AsyncStorage.getItem('onboarding_complete');
         await AsyncStorage.clear();
+        if (onboardingComplete) {
+          await AsyncStorage.setItem('onboarding_complete', onboardingComplete);
+        }
         setTimeout(() => router.replace('/auth/setup' as any), 2000);
       } else {
         modalToast.show({ type: 'error', title: 'Delete Failed', message: data.error || 'Could not delete account' });

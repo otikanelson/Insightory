@@ -1,76 +1,70 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, View } from 'react-native';
 import { ThemedText } from '../../components/ThemedText';
+import { useAppReady } from '../../context/AppReadyContext';
 import { useTheme } from '../../context/ThemeContext';
 
-const FULL_TITLE = 'Welcome to Insightory';
-const FULL_BODY =
-  "Let's help you and your business achieve real-time inventory intelligence — track stock, predict demand, scan products, and get AI-powered alerts before you run out.";
-
-// Characters typed per second
-const TITLE_SPEED = 38; // ms per char
-const BODY_SPEED = 22;  // ms per char
-// Pause between title finishing and body starting
-const PAUSE_AFTER_TITLE = 400;
-// Pause after body finishes before navigating
-const PAUSE_AFTER_BODY = 1800;
+const FADE_DURATION = 900;    // ms for each fade-in
+const PAUSE_BETWEEN = 300;    // ms gap between title and body
+const PAUSE_AFTER_BODY = 2200; // ms to linger after body appears
 
 export default function OnboardingWelcome() {
   const { theme } = useTheme();
+  const { splashDone } = useAppReady();
   const router = useRouter();
 
-  const [titleText, setTitleText] = useState('');
-  const [bodyText, setBodyText] = useState('');
-  const [titleDone, setTitleDone] = useState(false);
-
+  const titleOpacity = useRef(new Animated.Value(0)).current;
+  const bodyOpacity = useRef(new Animated.Value(0)).current;
   const navigated = useRef(false);
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  // Type out title
   useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      i++;
-      setTitleText(FULL_TITLE.slice(0, i));
-      if (i >= FULL_TITLE.length) {
-        clearInterval(interval);
-        setTimeout(() => setTitleDone(true), PAUSE_AFTER_TITLE);
-      }
-    }, TITLE_SPEED);
-    return () => clearInterval(interval);
-  }, []);
+    if (!splashDone) return; // wait until splash overlay is gone
 
-  // Type out body after title is done
-  useEffect(() => {
-    if (!titleDone) return;
-    let i = 0;
-    const interval = setInterval(() => {
-      i++;
-      setBodyText(FULL_BODY.slice(0, i));
-      if (i >= FULL_BODY.length) {
-        clearInterval(interval);
-        setTimeout(() => {
-          if (!navigated.current) {
-            navigated.current = true;
-            router.replace('/onboarding/setup' as any);
-          }
-        }, PAUSE_AFTER_BODY);
+    // Fade in title → pause → fade in body → linger → navigate
+    animationRef.current = Animated.sequence([
+      Animated.timing(titleOpacity, {
+        toValue: 1,
+        duration: FADE_DURATION,
+        useNativeDriver: true,
+      }),
+      Animated.delay(PAUSE_BETWEEN),
+      Animated.timing(bodyOpacity, {
+        toValue: 1,
+        duration: FADE_DURATION,
+        useNativeDriver: true,
+      }),
+      Animated.delay(PAUSE_AFTER_BODY),
+    ]);
+
+    animationRef.current.start(() => {
+      if (!navigated.current) {
+        navigated.current = true;
+        router.push('/auth/setup' as any);
       }
-    }, BODY_SPEED);
-    return () => clearInterval(interval);
-  }, [titleDone]);
+    });
+
+    return () => {
+      animationRef.current?.stop();
+    };
+  }, [splashDone]);
 
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
       <View style={styles.center}>
-        <ThemedText style={[styles.title, { color: theme.text }]}>
-          {titleText}
-        </ThemedText>
-        {titleDone && (
-          <ThemedText style={[styles.body, { color: theme.subtext }]}>
-            {bodyText}
+        <Animated.View style={{ opacity: titleOpacity }}>
+          <ThemedText style={[styles.title, { color: theme.text }]}>
+            Welcome to Insightory
           </ThemedText>
-        )}
+        </Animated.View>
+        <Animated.View style={{ opacity: bodyOpacity }}>
+          <ThemedText style={[styles.body, { color: theme.subtext }]}>
+            Let's help you and your business achieve real-time inventory
+            intelligence — track stock, predict demand, scan products, and get
+            AI-powered alerts before you run out.
+          </ThemedText>
+        </Animated.View>
       </View>
     </View>
   );
@@ -83,6 +77,7 @@ const styles = StyleSheet.create({
   center: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 36,
     gap: 20,
   },
@@ -90,10 +85,12 @@ const styles = StyleSheet.create({
     fontSize: 32,
     lineHeight: 40,
     letterSpacing: 0.3,
+    textAlign: 'center',
   },
   body: {
     fontSize: 16,
     lineHeight: 26,
     letterSpacing: 0.1,
+    textAlign: 'center',
   },
 });

@@ -4,18 +4,22 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    StyleSheet,
-    TextInput,
-    View
+  BackHandler,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View
 } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { PinInput } from '../../components/PinInput';
 import { ThemedText } from '../../components/ThemedText';
+import { useSetupGuide } from '../../context/SetupGuideContext';
 import { useTheme } from '../../context/ThemeContext';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -24,9 +28,51 @@ type SetupStep = 'welcome' | 'store-name' | 'admin-name' | 'login-pin' | 'securi
 
 export default function SetupScreen() {
   const { theme, isDark } = useTheme();
+  const { showStep, isActive, startGuide } = useSetupGuide();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
 
-    const router = useRouter();
+  // Start on welcome screen
   const [step, setStep] = useState<SetupStep>('welcome');
+
+  // Auto-start guide when component mounts on welcome screen
+  useEffect(() => {
+    if (step === 'welcome') {
+      // Small delay to ensure layout is ready
+      const timer = setTimeout(() => {
+        startGuide('admin'); // Start in admin mode by default
+        showStep('welcome');
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Handle Android back button
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (step === 'welcome') {
+        // Exit app on welcome screen
+        BackHandler.exitApp();
+        return true;
+      } else {
+        // Navigate back through steps
+        handleBack();
+        return true;
+      }
+    });
+
+    return () => backHandler.remove();
+  }, [step]);
+
+  const goToStep = (s: SetupStep) => {
+    setStep(s);
+    if (isActive && s !== 'welcome') showStep(s);
+  };
+
+  // When user clicks "Create Store" from welcome, go to store-name
+  const handleStartSetup = () => {
+    goToStep('store-name');
+  };
   const [storeName, setStoreName] = useState('');
   const [adminName, setAdminName] = useState('');
   const [adminLoginPin, setAdminLoginPin] = useState('');
@@ -52,7 +98,7 @@ export default function SetupScreen() {
           setIsFirstPin(true);
           setPinError(false);
           setPinKey(prev => prev + 1);
-          setStep('security-pin'); // Move to Security PIN step
+          goToStep('security-pin');
         } else {
           setPinError(true);
           setIsFirstPin(true);
@@ -135,7 +181,7 @@ export default function SetupScreen() {
                 text2: `${storeNameFromResponse || storeName} is ready!`,
               });
 
-              setStep('complete');
+              goToStep('complete');
               console.log('11. Setup complete!');
             } else {
               console.error('11. Backend returned unsuccessful response:', response.data);
@@ -193,7 +239,7 @@ export default function SetupScreen() {
                   text2: 'Account saved locally (offline mode)',
                 });
 
-                setStep('complete');
+                goToStep('complete');
               } catch (localError) {
                 console.error('Local storage fallback failed:', localError);
                 Toast.show({
@@ -224,7 +270,7 @@ export default function SetupScreen() {
 
   const handleContinue = () => {
     if (step === 'welcome') {
-      setStep('store-name');
+      handleStartSetup();
     } else if (step === 'store-name') {
       if (!storeName.trim()) {
         Toast.show({
@@ -234,7 +280,7 @@ export default function SetupScreen() {
         });
         return;
       }
-      setStep('admin-name');
+      goToStep('admin-name');
     } else if (step === 'admin-name') {
       if (!adminName.trim()) {
         Toast.show({
@@ -244,7 +290,7 @@ export default function SetupScreen() {
         });
         return;
       }
-      setStep('login-pin');
+      goToStep('login-pin');
     } else if (step === 'complete') {
       router.replace('/auth/login' as any);
     }
@@ -253,16 +299,17 @@ export default function SetupScreen() {
   const handleBack = () => {
     if (step === 'store-name') {
       setStep('welcome');
+      showStep('welcome');
     } else if (step === 'admin-name') {
-      setStep('store-name');
+      goToStep('store-name');
     } else if (step === 'login-pin') {
-      setStep('admin-name');
+      goToStep('admin-name');
       setIsFirstPin(true);
       setTempPin('');
       setPinError(false);
       setPinKey(prev => prev + 1);
     } else if (step === 'security-pin') {
-      setStep('login-pin');
+      goToStep('login-pin');
       setIsFirstPin(true);
       setTempPin('');
       setPinError(false);
@@ -271,24 +318,29 @@ export default function SetupScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background, }}>
-    <KeyboardAvoidingView 
-      style={[styles.container, { backgroundColor: theme.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={0}
-    >
-      {/* Header */}
-      <View style={[styles.headerBar, { backgroundColor: theme.primary }]} />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <KeyboardAvoidingView 
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
+        <ScrollView
+          contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top, paddingBottom: Math.max(insets.bottom, 20) }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={[styles.headerBar, { backgroundColor: theme.primary }]} />
 
-      {/* Content */}
-      <View style={styles.content}>
-        {step !== 'welcome' && step !== 'complete' && (
-          <Pressable style={styles.backBtn} onPress={handleBack}>
-            <View style={[styles.backBtnInner, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-              <Ionicons name="arrow-back" size={20} color={theme.text} />
-            </View>
-          </Pressable>
-        )}
+          {/* Content */}
+          <View style={styles.content}>
+            {step !== 'welcome' && step !== 'complete' && (
+              <Pressable style={styles.backBtn} onPress={handleBack}>
+                <View style={[styles.backBtnInner, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                  <Ionicons name="arrow-back" size={20} color={theme.text} />
+                </View>
+              </Pressable>
+            )}
 
         {step === 'welcome' && (
           <>
@@ -301,11 +353,11 @@ export default function SetupScreen() {
               Welcome
             </ThemedText>
             <ThemedText style={[styles.subtitle, { color: theme.subtext }]}>
-              Let's set up your admin account to get started
+              Set up your admin account or join an existing store
             </ThemedText>
 
             <View style={styles.featureList}>
-              <View style={styles.featureItem}>
+              <View style={styles.featureItem}> 
                 <View style={[styles.featureIcon, { backgroundColor: theme.primary + '15' }]}>
                   <Ionicons name="shield-checkmark" size={24} color={theme.primary} />
                 </View>
@@ -348,32 +400,18 @@ export default function SetupScreen() {
               </View>
             </View>
 
-            {/* Login Links */}
-            <View style={styles.loginLinksContainer}>
-              <ThemedText style={[styles.loginPrompt, { color: theme.subtext }]}>
-                Already have an account?
+            {/* Login Link */}
+            <Pressable 
+              style={styles.loginLink}
+              onPress={() => router.push('/auth/login' as any)}
+            >
+              <ThemedText style={[styles.loginLinkText, { color: theme.subtext }]}>
+                Already have an account?{' '}
+                <ThemedText style={[styles.loginLinkBold, { color: theme.primary }]}>
+                  Sign in
+                </ThemedText>
               </ThemedText>
-              <View style={styles.loginButtons}>
-                <Pressable 
-                  style={[styles.loginButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
-                  onPress={() => router.push('/auth/login?role=admin' as any)}
-                >
-                  <Ionicons name="shield-checkmark-outline" size={20} color={theme.primary} />
-                  <ThemedText style={[styles.loginButtonText, { color: theme.text }]}>
-                    Admin Login
-                  </ThemedText>
-                </Pressable>
-                <Pressable 
-                  style={[styles.loginButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
-                  onPress={() => router.push('/auth/login?role=staff' as any)}
-                >
-                  <Ionicons name="people-outline" size={20} color={theme.primary} />
-                  <ThemedText style={[styles.loginButtonText, { color: theme.text }]}>
-                    Staff Login
-                  </ThemedText>
-                </Pressable>
-              </View>
-            </View>
+            </Pressable>
 
             {/* Author Login Link */}
             <Pressable 
@@ -561,24 +599,50 @@ export default function SetupScreen() {
         )}
       </View>
 
-      {/* Footer Button */}
-      {(step === 'welcome' || step === 'store-name' || step === 'admin-name' || step === 'complete') && (
-        <View style={styles.footer}>
-          <Pressable
-            style={[styles.continueButton, { backgroundColor: theme.primary }]}
-            onPress={handleContinue}
-          >
-            <ThemedText style={styles.continueText}>
-              {step === 'complete' ? 'Go to Login' : 'Continue'}
-            </ThemedText>
-            <Ionicons name="arrow-forward" size={20} color="#FFF" />
-          </Pressable>
-        </View>
-      )}
+          {/* Footer Buttons */}
+          {(step === 'welcome' || step === 'store-name' || step === 'admin-name' || step === 'complete') && (
+            <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+              {step === 'welcome' ? (
+                <>
+                  <Pressable
+                    style={[styles.continueButton, { backgroundColor: theme.primary }]}
+                    onPress={handleStartSetup}
+                  >
+                    <ThemedText style={styles.continueText}>Create Store</ThemedText>
+                    <Ionicons name="arrow-forward" size={20} color="#FFF" />
+                  </Pressable>
+
+                  <Pressable
+                    style={[styles.joinStoreButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
+                    onPress={() => {
+                      startGuide('staff');
+                      router.push('/auth/staff-register' as any);
+                    }}
+                  >
+                    <Ionicons name="people" size={20} color={theme.primary} />
+                    <ThemedText style={[styles.joinStoreText, { color: theme.text }]}>
+                      Join Store
+                    </ThemedText>
+                  </Pressable>
+                </>
+              ) : (
+                <Pressable
+                  style={[styles.continueButton, { backgroundColor: theme.primary }]}
+                  onPress={handleContinue}
+                >
+                  <ThemedText style={styles.continueText}>
+                    {step === 'complete' ? 'Go to Login' : 'Continue'}
+                  </ThemedText>
+                  <Ionicons name="arrow-forward" size={20} color="#FFF" />
+                </Pressable>
+              )}
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Author Login Modal */}
       <AuthorLogin visible={showAuthorLogin} onClose={() => setShowAuthorLogin(false)} />
-    </KeyboardAvoidingView>
     </View>
   );
 }
@@ -586,6 +650,12 @@ export default function SetupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   headerBar: {
     height: 4,
@@ -644,7 +714,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 15,
-    marginBottom: 30,
+    marginBottom: 60,
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -655,7 +725,7 @@ const styles = StyleSheet.create({
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 10,
   },
   featureIcon: {
     width: 50,
@@ -734,7 +804,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 30,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   continueButton: {
     flexDirection: 'row',
@@ -742,13 +812,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
     paddingVertical: 16,
-    marginVertical: 10,
     borderRadius: 16,
   },
   continueText: {
     color: '#FFF',
     fontSize: 17,
-    },
+  },
   loginLink: {
     marginTop: 30,
     paddingVertical: 10,
@@ -758,37 +827,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   loginLinkBold: {
-    },
-  loginLinksContainer: {
-    marginTop: 30,
-    width: '100%',
-    alignItems: 'center',
+    fontWeight: '600',
   },
-  loginPrompt: {
-    fontSize: 14,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  loginButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    width: '100%',
-  },
-  loginButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 2,
-  },
-  loginButtonText: {
-    fontSize: 15,
-    },
   authorLink: {
-    marginTop: 20,
+    marginTop: 10,
   },
   authorLinkText: {
     fontSize: 12,
@@ -807,6 +849,19 @@ const styles = StyleSheet.create({
   },
   diagnosticsText: {
     fontSize: 13,
-    },
+  },
+  joinStoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 16,
+    marginTop: 12,
+    borderRadius: 16,
+    borderWidth: 2,
+  },
+  joinStoreText: {
+    fontSize: 17,
+  },
 });
 
