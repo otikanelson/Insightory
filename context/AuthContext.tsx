@@ -150,6 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ['auth_last_login', Date.now().toString()],
             ['auth_store_id', userData.storeId || ''],
             ['auth_store_name', userData.storeName || ''],
+            ['onboarding_complete', 'true'], // Mark onboarding as complete on successful login
           ];
 
           // Store Security PIN for admin users if provided
@@ -284,6 +285,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 ['auth_user_id', userId],
                 ['auth_user_name', userName],
                 ['auth_last_login', Date.now().toString()],
+                ['onboarding_complete', 'true'], // Mark onboarding as complete on successful login
               ]);
 
               setUser({ 
@@ -333,6 +335,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Logout function
   const logout = async () => {
     try {
+      console.log('🚪 [LOGOUT] Starting logout...');
+      
+      // Preserve keys that should survive logout
+      const onboardingStatus = await AsyncStorage.getItem('onboarding_complete');
+      const setupStatus = await AsyncStorage.getItem('admin_first_setup');
+      
+      console.log('🚪 [LOGOUT] Keys before logout:');
+      console.log('  - onboarding_complete:', onboardingStatus);
+      console.log('  - admin_first_setup:', setupStatus);
+      
       await AsyncStorage.multiRemove([
         'auth_session_token',
         'auth_last_login',
@@ -347,9 +359,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         'staff_login_pin',
       ]);
 
+      // Restore preserved keys after clearing auth data
+      const keysToRestore: [string, string][] = [];
+      if (onboardingStatus) {
+        keysToRestore.push(['onboarding_complete', onboardingStatus]);
+      }
+      if (setupStatus) {
+        keysToRestore.push(['admin_first_setup', setupStatus]);
+      }
+      
+      if (keysToRestore.length > 0) {
+        await AsyncStorage.multiSet(keysToRestore);
+        console.log('🚪 [LOGOUT] Restored keys:', keysToRestore.map(k => k[0]).join(', '));
+      }
+
       setUser(null);
       setRole(null);
       setIsAuthenticated(false);
+
+      console.log('🚪 [LOGOUT] Logout complete');
 
       Toast.show({
         type: 'success',

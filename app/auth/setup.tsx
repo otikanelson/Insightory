@@ -167,6 +167,7 @@ export default function SetupScreen() {
                 ['admin_login_pin', adminLoginPin],
                 ['admin_security_pin', pin],
                 ['admin_first_setup', 'completed'],
+                ['onboarding_complete', 'true'], // Mark onboarding as complete
                 ['auth_user_name', adminName || 'Admin'],
                 ['auth_user_id', adminId],
                 ['auth_user_role', 'admin'],
@@ -230,6 +231,7 @@ export default function SetupScreen() {
                   ['admin_login_pin', adminLoginPin],
                   ['admin_security_pin', pin],
                   ['admin_first_setup', 'completed'],
+                  ['onboarding_complete', 'true'], // Mark onboarding as complete
                   ['auth_user_name', adminName || 'Admin'],
                 ]);
 

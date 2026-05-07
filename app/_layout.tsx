@@ -75,10 +75,33 @@ function RootLayoutNav() {
         await AsyncStorage.removeItem('auth_is_author');
       }
 
+      // Check if user has ever completed setup OR onboarding
+      // If either is true, they're a recurring user
       const setupComplete = await AsyncStorage.getItem('admin_first_setup');
       const onboardingDone = await AsyncStorage.getItem('onboarding_complete');
-      setIsFirstTime(!setupComplete);
-      setOnboardingComplete(!!onboardingDone);
+      
+      // MIGRATION: If user has completed setup but onboarding_complete is not set, set it now
+      // This handles users who logged in before we added the onboarding_complete flag
+      if (setupComplete && !onboardingDone) {
+        console.log('🔄 [MIGRATION] Setting onboarding_complete for existing user');
+        await AsyncStorage.setItem('onboarding_complete', 'true');
+      }
+      
+      // Re-read after potential migration
+      const onboardingDoneAfterMigration = await AsyncStorage.getItem('onboarding_complete');
+      
+      console.log('🔍 [NAVIGATION] Checking first-time status:');
+      console.log('  - admin_first_setup:', setupComplete);
+      console.log('  - onboarding_complete:', onboardingDoneAfterMigration);
+      
+      // User is first time ONLY if both setup and onboarding are not complete
+      const isRecurringUser = !!(setupComplete || onboardingDoneAfterMigration);
+      
+      console.log('  - isRecurringUser:', isRecurringUser);
+      console.log('  - isFirstTime:', !isRecurringUser);
+      
+      setIsFirstTime(!isRecurringUser);
+      setOnboardingComplete(!!onboardingDoneAfterMigration);
     } catch (error) {
       console.error('Error checking first time setup:', error);
       setIsFirstTime(true);
@@ -103,9 +126,16 @@ function RootLayoutNav() {
     const inOnboardingGroup = segments[0] === 'onboarding';
     const isStaffRegister = segments[1] === 'staff-register';
 
-    // If onboarding hasn't been seen yet, send there first (unless already there or in auth)
-    // IMPORTANT: Skip this check entirely if the user is already authenticated
-    if (!isAuthenticated && !onboardingComplete && !inOnboardingGroup && !inAuthorGroup && !inAuthGroup) {
+    console.log('🧭 [NAVIGATION] Navigation check:');
+    console.log('  - isAuthenticated:', isAuthenticated);
+    console.log('  - isFirstTime:', isFirstTime);
+    console.log('  - onboardingComplete:', onboardingComplete);
+    console.log('  - current segment:', segments[0]);
+
+    // CRITICAL: First-time users ONLY see onboarding
+    // If isFirstTime is false, user has used the app before and should NEVER see onboarding
+    if (!isAuthenticated && isFirstTime && !onboardingComplete && !inOnboardingGroup && !inAuthorGroup && !inAuthGroup) {
+      console.log('  → Redirecting to onboarding (first-time user)');
       hasNavigatedRef.current = true;
       router.replace('/onboarding' as any);
       return;
@@ -144,32 +174,43 @@ function RootLayoutNav() {
       // Regular user flow (admin/staff)
       // Priority 1: If authenticated, ensure they're in the app (not auth screens)
       if (isAuthenticated) {
+        console.log('  → User is authenticated');
         if (inAuthGroup && !isStaffRegister) {
           // Authenticated but in auth screens - redirect based on role
+          console.log('  → In auth group, redirecting to app');
           checkUserRole().then((role) => {
             hasNavigatedRef.current = true;
             if (role === 'admin') {
+              console.log('  → Redirecting admin to /admin/sales');
               router.replace('/admin/sales' as any);
             } else {
+              console.log('  → Redirecting staff to /(tabs)');
               router.replace('/(tabs)');
             }
           });
+        } else {
+          console.log('  → Already in app, no redirect needed');
         }
         return;
       }
 
       // Priority 2: Not authenticated - check if first time or returning user
       // CRITICAL: Don't redirect if already in auth/onboarding screens (let user navigate freely)
+      console.log('  → User is NOT authenticated');
       if (!inAuthGroup && !inAuthorGroup && !inOnboardingGroup) {
         if (isFirstTime) {
           // First time user - redirect to setup
+          console.log('  → First-time user, redirecting to /auth/setup');
           hasNavigatedRef.current = true;
           router.replace('/auth/setup' as any);
         } else {
           // Returning user not authenticated - redirect to login
+          console.log('  → Recurring user, redirecting to /auth/login');
           hasNavigatedRef.current = true;
           router.replace('/auth/login' as any);
         }
+      } else {
+        console.log('  → Already in auth/onboarding, no redirect');
       }
       // If already in auth/onboarding screens, don't interfere - let user navigate
     });
