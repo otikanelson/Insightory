@@ -1,7 +1,7 @@
 {
-  "name": "insightory-landing",
+  "name": "Bocksed-landing",
   "version": "1.0.0",
-  "description": "Insightory App Landing Website",
+  "description": "Bocksed App Landing Website",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

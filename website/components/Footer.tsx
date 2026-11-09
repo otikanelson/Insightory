@@ -96,11 +96,11 @@ export default function Footer() {
                 </li>
               ))}
               <li>
-                <a href="mailto:support@insightory.app" className="text-sm transition-colors duration-200"
+                <a href="mailto:support@Bocksed.app" className="text-sm transition-colors duration-200"
                   style={{ color: 'var(--subtext)' }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent2)')}
                   onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--subtext)')}>
-                  support@insightory.app
+                  support@Bocksed.app
                 </a>
               </li>
             </ul>
@@ -111,7 +111,7 @@ export default function Footer() {
         <div className="divider mb-8" />
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs" style={{ color: 'var(--subtext)' }}>
-            © {new Date().getFullYear()} Insightory. All rights reserved.
+            © {new Date().getFullYear()} Bocksed. All rights reserved.
           </p>
           <button onClick={scrollToTop}
             className="flex items-center gap-2 text-xs transition-colors duration-200 group"

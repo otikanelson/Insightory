@@ -118,7 +118,7 @@ export default function OnboardingWelcome() {
         
         <Animated.View style={{ opacity: titleOpacity }}>
           <ThemedText style={[styles.title, { color: theme.text }]}>
-            Welcome to Insightory
+            Welcome to Bocksed
           </ThemedText>
         </Animated.View>
         <Animated.View style={{ opacity: bodyOpacity }}>

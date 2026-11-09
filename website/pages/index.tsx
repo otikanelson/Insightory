@@ -13,10 +13,10 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Insightory — Smart Inventory Management</title>
-        <meta name="description" content="Insightory gives your business real-time inventory intelligence. Track stock, predict demand, scan products, and get AI-powered alerts before you run out." />
+        <title>Bocksed — Smart Inventory Management</title>
+        <meta name="description" content="Bocksed gives your business real-time inventory intelligence. Track stock, predict demand, scan products, and get AI-powered alerts before you run out." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta property="og:title" content="Insightory — Smart Inventory Management" />
+        <meta property="og:title" content="Bocksed — Smart Inventory Management" />
         <meta property="og:description" content="Smart inventory management for modern retail. Track stock, predict demand, and grow your business with confidence." />
         <meta property="og:type" content="website" />
         <link rel="icon" href="/images/favicon.png" />

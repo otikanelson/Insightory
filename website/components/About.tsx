@@ -79,7 +79,7 @@ export default function About() {
               Up and running in <span className="gradient-text">minutes</span>
             </h2>
             <p className="text-lg leading-relaxed mb-8" style={{ color: 'var(--subtext)' }}>
-              Insightory is designed to get out of your way. No complex setup, no training required — just powerful inventory management that works from day one.
+              Bocksed is designed to get out of your way. No complex setup, no training required — just powerful inventory management that works from day one.
             </p>
 
             {/* Testimonial */}
@@ -90,7 +90,7 @@ export default function About() {
                 </div>
                 <div>
                   <p className="text-sm leading-relaxed italic mb-3" style={{ color: 'var(--subtext)' }}>
-                    "Insightory cut our stockout incidents by 80% in the first month. The AI alerts are genuinely impressive."
+                    "Bocksed cut our stockout incidents by 80% in the first month. The AI alerts are genuinely impressive."
                   </p>
                   <div className="text-xs font-medium" style={{ color: 'var(--subtext)' }}>James M. — Retail Store Owner</div>
                 </div>

@@ -1,4 +1,4 @@
-# 🚀 Insightory - Build & Deployment Instructions
+# 🚀 Bocksed - Build & Deployment Instructions
 
 **Version:** 1.0.0  
 **Last Updated:** February 21, 2026  
@@ -104,7 +104,7 @@ Create `backend/.env`:
 
 ```env
 # MongoDB
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/Insightory?retryWrites=true&w=majority
+MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/Bocksed?retryWrites=true&w=majority
 
 # Server
 PORT=5000
@@ -209,8 +209,8 @@ Verify `app.json` configuration:
 ```json
 {
   "expo": {
-    "name": "Insightory",
-    "slug": "Insightory",
+    "name": "Bocksed",
+    "slug": "Bocksed",
     "version": "1.0.0",
     "owner": "neil2022",
     "android": {
@@ -331,7 +331,7 @@ Download the `.aab` file from EAS dashboard or provided link.
 1. Go to https://play.google.com/console
 2. Create new app
 3. Fill in app details:
-   - App name: Insightory
+   - App name: Bocksed
    - Description: [Use description from PROJECT_DOCUMENTATION.md]
    - Category: Business
    - Screenshots: [Prepare 2-8 screenshots]
@@ -365,7 +365,7 @@ Download the `.aab` file from EAS dashboard or provided link.
 {
   "expo": {
     "ios": {
-      "bundleIdentifier": "com.yourcompany.Insightory",
+      "bundleIdentifier": "com.yourcompany.Bocksed",
       "buildNumber": "1.0.0",
       "supportsTablet": true
     }

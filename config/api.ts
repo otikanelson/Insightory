@@ -4,7 +4,7 @@
  */
 
 // Read from environment variable
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://insightory-backend.vercel.app/api';
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://Bocksed-backend.vercel.app/api';
 
 // WebSocket URL (derived from API_URL)
 export const WS_URL = API_URL.replace('/api', '').replace('http', 'ws');

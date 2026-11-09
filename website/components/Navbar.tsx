@@ -129,7 +129,7 @@ export default function Navbar() {
           <div className="relative w-9 h-9">
             <Image
               src={isDark ? '/images/icon.png' : '/images/icon_light.png'}
-              alt="Insightory"
+              alt="Bocksed"
               fill
               className="object-contain"
             />

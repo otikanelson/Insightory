@@ -72,7 +72,7 @@ export const useProducts = () => {
         // Backend already calculates totalQuantity, but ensure it exists
         totalQuantity:
           p.totalQuantity ??
-          p.Insightoryuantity ??
+          p.Bockseduantity ??
           p.batches?.reduce((acc: number, b: Batch) => acc + b.quantity, 0) ??
           0,
         // Ensure batches is always an array

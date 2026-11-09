@@ -122,7 +122,7 @@ export default function Download() {
               </h2>
 
               <p className="text-lg leading-relaxed mb-10" style={{ color: 'var(--subtext)' }}>
-                Download Insightory for free and start managing your inventory smarter. Available on iOS and Android — no credit card required.
+                Download Bocksed for free and start managing your inventory smarter. Available on iOS and Android — no credit card required.
               </p>
 
               {/* Store badges */}

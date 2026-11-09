@@ -25,7 +25,7 @@ export default function PitchScreen() {
     },
     {
       imageUrl: isDark ? require('../../assets/images/icon.png') : require('../../assets/images/icon_light.png'),
-      title: 'Meet Insightory',
+      title: 'Meet Bocksed',
       description: 'Your intelligent inventory companion powered by AI and real-time analytics.',
     },
     {
@@ -36,7 +36,7 @@ export default function PitchScreen() {
     {
       imageUrl: require('../../assets/images/business.png'),
       title: 'Ready to transform your business?',
-      description: 'Join businesses already saving time and money with Insightory.',
+      description: 'Join businesses already saving time and money with Bocksed.',
     },
   ];
   const router = useRouter();

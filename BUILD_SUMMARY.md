@@ -84,7 +84,7 @@ Or download from the EAS dashboard.
 ## Build Configuration Details
 
 **Environment Variables:**
-- `EXPO_PUBLIC_API_URL`: https://insightory-backend.vercel.app/api
+- `EXPO_PUBLIC_API_URL`: https://Bocksed-backend.vercel.app/api
 - `EAS_SKIP_AUTO_FINGERPRINT`: 1
 
 **Android Permissions:**

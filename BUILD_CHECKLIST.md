@@ -27,7 +27,7 @@
 ### Build Configuration
 - **Build Type**: app-bundle (AAB for Play Store)
 - **Profile**: production
-- **API URL**: https://insightory-backend.vercel.app/api
+- **API URL**: https://Bocksed-backend.vercel.app/api
 - **Channel**: production
 
 ### Permissions Required

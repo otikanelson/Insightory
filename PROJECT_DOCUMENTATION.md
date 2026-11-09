@@ -1,4 +1,4 @@
-# 📦 Insightory (InventiEase) - Complete Project Documentation
+# 📦 Bocksed (InventiEase) - Complete Project Documentation
 
 **Version:** 1.0.0  
 **Platform:** Android (iOS Ready)  
@@ -29,9 +29,9 @@
 
 ## 1. Executive Summary
 
-### What is Insightory?
+### What is Bocksed?
 
-Insightory (formerly InventiEase) is an AI-powered mobile inventory management system designed specifically for businesses dealing with perishable goods. The application helps businesses:
+Bocksed (formerly InventiEase) is an AI-powered mobile inventory management system designed specifically for businesses dealing with perishable goods. The application helps businesses:
 
 - **Reduce Waste**: FEFO (First Expired, First Out) automation ensures products nearing expiry are sold first
 - **Prevent Stockouts**: AI predictions forecast demand and alert when stock is running low
@@ -50,7 +50,7 @@ Insightory (formerly InventiEase) is an AI-powered mobile inventory management s
 
 ### Key Differentiators
 
-1. **AI-Powered Predictions**: Unlike traditional inventory systems, Insightory uses machine learning to predict demand
+1. **AI-Powered Predictions**: Unlike traditional inventory systems, Bocksed uses machine learning to predict demand
 2. **Mobile-First Design**: Manage inventory from anywhere using your smartphone
 3. **FEFO Automation**: Automatic sorting and discount recommendations for expiring products
 4. **Multi-Tenant Architecture**: Support for multiple stores with complete data isolation
@@ -70,7 +70,7 @@ Insightory (formerly InventiEase) is an AI-powered mobile inventory management s
 
 ### Project Background
 
-Insightory was developed to address the critical challenge of inventory management for businesses dealing with perishable goods. Traditional inventory systems focus on quantity tracking but fail to account for product expiry dates, leading to significant waste and lost revenue.
+Bocksed was developed to address the critical challenge of inventory management for businesses dealing with perishable goods. Traditional inventory systems focus on quantity tracking but fail to account for product expiry dates, leading to significant waste and lost revenue.
 
 ### Problem Statement
 
@@ -83,7 +83,7 @@ Businesses face several challenges:
 
 ### Solution
 
-Insightory provides:
+Bocksed provides:
 1. **Proactive Alerts**: Get notified before problems occur
 2. **AI Predictions**: Forecast demand 7, 14, and 30 days ahead
 3. **FEFO Automation**: Automatically prioritize products by expiry date
@@ -189,7 +189,7 @@ Insightory provides:
 ### Directory Structure
 
 ```
-Insightory/
+Bocksed/
 ├── app/                          # Expo Router screens
 │   ├── (tabs)/                   # Staff dashboard tabs
 │   │   ├── index.tsx            # Dashboard
@@ -578,7 +578,7 @@ Viewer (Read-Only)
 ### Collections Overview
 
 ```
-Insightory_database/
+Bocksed_database/
 ├── users                 # User accounts
 ├── stores                # Store information
 ├── products              # Product catalog
@@ -1076,7 +1076,7 @@ const socket = io(WS_URL, {
 ### Prediction Algorithm
 
 **Overview**:
-Insightory uses a custom JavaScript ML engine that combines multiple statistical methods to forecast demand and assess risk.
+Bocksed uses a custom JavaScript ML engine that combines multiple statistical methods to forecast demand and assess risk.
 
 **Data Inputs**:
 - Historical sales data (last 90 days)
@@ -1335,7 +1335,7 @@ cd ..
 
 Create `backend/.env`:
 ```env
-MONGO_URI=mongodb://localhost:27017/Insightory
+MONGO_URI=mongodb://localhost:27017/Bocksed
 PORT=5000
 NODE_ENV=development
 CLOUDINARY_CLOUD_NAME=your_cloud_name
@@ -1560,4 +1560,4 @@ For complete testing procedures, see [TESTING_MANUAL.md](TESTING_MANUAL.md).
 **End of Documentation**
 
 *Version 1.0.0 - February 21, 2026*  
-*© 2026 Insightory. All rights reserved.*
+*© 2026 Bocksed. All rights reserved.*

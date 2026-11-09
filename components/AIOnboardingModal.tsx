@@ -51,7 +51,7 @@ export const AIOnboardingModal: React.FC<AIOnboardingModalProps> = ({
 
             {/* Subtitle */}
             <ThemedText style={[styles.subtitle, { color: theme.subtext }]}>
-              Insightory uses artificial intelligence to help you make smarter inventory decisions
+              Bocksed uses artificial intelligence to help you make smarter inventory decisions
             </ThemedText>
 
             {/* Features */}

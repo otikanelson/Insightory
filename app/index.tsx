@@ -137,7 +137,7 @@ export default function WelcomeScreen() {
 
         {/* Semicircular Header */}
         <View style={[styles.headerCurve, { backgroundColor: theme.header }]}>
-          <ThemedText style={styles.headerTitle}>Insightory</ThemedText>
+          <ThemedText style={styles.headerTitle}>Bocksed</ThemedText>
           <Pressable
             style={[styles.logoutBtn, { top: insets.top + 10 }]}
             onPress={handleLogout}
@@ -151,7 +151,7 @@ export default function WelcomeScreen() {
           <View style={[styles.logoMark, { backgroundColor: theme.primaryLight }]}>
             <Ionicons name="cube" size={48} color={theme.primary} />
           </View>
-          <ThemedText style={[styles.appName, { color: theme.primary }]}>Insightory</ThemedText>
+          <ThemedText style={[styles.appName, { color: theme.primary }]}>Bocksed</ThemedText>
           <ThemedText style={[styles.subtitle, { color: theme.subtext }]}>
             Smart tracking for products & expiry dates
           </ThemedText>

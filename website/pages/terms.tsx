@@ -9,8 +9,8 @@ export default function Terms() {
   return (
     <>
       <Head>
-        <title>Terms of Service — Insightory</title>
-        <meta name="description" content="Insightory Terms of Service" />
+        <title>Terms of Service — Bocksed</title>
+        <meta name="description" content="Bocksed Terms of Service" />
       </Head>
       <ThemeApplier />
 
@@ -40,26 +40,26 @@ export default function Terms() {
 
           <div className="space-y-10 text-base leading-relaxed" style={{ color: 'var(--subtext)' }}>
             {[
-              { title: '1. Acceptance of Terms', content: 'By downloading, installing, or using the Insightory application ("Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Service.' },
+              { title: '1. Acceptance of Terms', content: 'By downloading, installing, or using the Bocksed application ("Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Service.' },
               {
                 title: '2. Use of the Service',
                 content: 'You may use the Service only for lawful purposes and in accordance with these Terms. You agree not to:',
-                list: ['Use the Service in any way that violates applicable laws or regulations', 'Attempt to gain unauthorized access to any part of the Service', 'Transmit any harmful, offensive, or disruptive content', 'Reverse engineer or attempt to extract the source code', 'Use the Service to compete with Insightory or build a similar product'],
+                list: ['Use the Service in any way that violates applicable laws or regulations', 'Attempt to gain unauthorized access to any part of the Service', 'Transmit any harmful, offensive, or disruptive content', 'Reverse engineer or attempt to extract the source code', 'Use the Service to compete with Bocksed or build a similar product'],
               },
               {
                 title: '3. Account Responsibilities',
                 content: null,
-                custom: <>You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to notify us immediately of any unauthorized use of your account at <a href="mailto:security@insightory.app" style={{ color: 'var(--primary)' }}>security@insightory.app</a>.</>,
+                custom: <>You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to notify us immediately of any unauthorized use of your account at <a href="mailto:security@Bocksed.app" style={{ color: 'var(--primary)' }}>security@Bocksed.app</a>.</>,
               },
-              { title: '4. Intellectual Property', content: 'The Service and its original content, features, and functionality are and will remain the exclusive property of Insightory and its licensors. Our trademarks and trade dress may not be used in connection with any product or service without the prior written consent of Insightory.' },
+              { title: '4. Intellectual Property', content: 'The Service and its original content, features, and functionality are and will remain the exclusive property of Bocksed and its licensors. Our trademarks and trade dress may not be used in connection with any product or service without the prior written consent of Bocksed.' },
               { title: '5. Subscription and Billing', content: 'Some features of the Service may require a paid subscription. Subscription fees are billed in advance on a monthly or annual basis. You may cancel your subscription at any time, and cancellation will take effect at the end of the current billing period. We do not provide refunds for partial billing periods.' },
-              { title: '6. Limitation of Liability', content: 'To the maximum extent permitted by law, Insightory shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or goodwill, arising out of or in connection with your use of the Service.' },
+              { title: '6. Limitation of Liability', content: 'To the maximum extent permitted by law, Bocksed shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or goodwill, arising out of or in connection with your use of the Service.' },
               { title: '7. Termination', content: 'We may terminate or suspend your account and access to the Service at our sole discretion, without notice, for conduct that we believe violates these Terms or is harmful to other users, us, or third parties, or for any other reason.' },
               { title: '8. Changes to Terms', content: 'We reserve the right to modify these Terms at any time. We will provide notice of significant changes by updating the date at the top of this page. Your continued use of the Service after any changes constitutes your acceptance of the new Terms.' },
               {
                 title: '9. Contact',
                 content: null,
-                custom: <>Questions about these Terms? Contact us at <a href="mailto:legal@insightory.app" style={{ color: 'var(--primary)' }}>legal@insightory.app</a> or visit our <Link href="/contact" style={{ color: 'var(--primary)' }}>Contact page</Link>.</>,
+                custom: <>Questions about these Terms? Contact us at <a href="mailto:legal@Bocksed.app" style={{ color: 'var(--primary)' }}>legal@Bocksed.app</a> or visit our <Link href="/contact" style={{ color: 'var(--primary)' }}>Contact page</Link>.</>,
               },
             ].map((s) => (
               <section key={s.title}>

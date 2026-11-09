@@ -1,4 +1,4 @@
-# 🧪 Insightory - Comprehensive Testing Manual
+# 🧪 Bocksed - Comprehensive Testing Manual
 
 **Version:** 1.0.0  
 **Last Updated:** February 21, 2026  
@@ -30,7 +30,7 @@
 
 ### Purpose
 
-This manual provides comprehensive testing procedures for Insightory to ensure:
+This manual provides comprehensive testing procedures for Bocksed to ensure:
 - All features work as expected
 - Data integrity is maintained
 - Security measures are effective

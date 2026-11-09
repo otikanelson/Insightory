@@ -66,7 +66,7 @@ export default function AIInfoScreen() {
             </ThemedText>
           </View>
           <ThemedText style={[styles.sectionText, { color: theme.subtext }]}>
-            Insightory uses artificial intelligence to analyze your sales history and inventory patterns. 
+            Bocksed uses artificial intelligence to analyze your sales history and inventory patterns. 
             The system learns from your data to provide accurate forecasts and recommendations.
           </ThemedText>
         </View>

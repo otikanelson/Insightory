@@ -67,7 +67,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     try {
-      const saved = localStorage.getItem('insightory-theme');
+      const saved = localStorage.getItem('Bocksed-theme');
       if (saved) {
         setIsDark(saved === 'dark');
       }
@@ -78,7 +78,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const toggleTheme = () => {
     setIsDark((prev) => {
       const next = !prev;
-      try { localStorage.setItem('insightory-theme', next ? 'dark' : 'light'); } catch {}
+      try { localStorage.setItem('Bocksed-theme', next ? 'dark' : 'light'); } catch {}
       return next;
     });
   };

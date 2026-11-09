@@ -66,7 +66,7 @@ export default function Hero() {
         {/* Sub */}
         <p ref={subRef} className="text-lg md:text-xl max-w-2xl leading-relaxed mb-10"
           style={{ color: 'var(--subtext)' }}>
-          Insightory gives your business real-time inventory intelligence — track stock, predict demand, scan products, and get AI-powered alerts before you run out.
+          Bocksed gives your business real-time inventory intelligence — track stock, predict demand, scan products, and get AI-powered alerts before you run out.
         </p>
 
         {/* CTAs */}

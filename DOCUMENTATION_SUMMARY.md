@@ -1,7 +1,7 @@
 # 📚 Documentation Package Summary
 
 **Created:** February 21, 2026  
-**For:** Insightory (InventiEase) Project Submission
+**For:** Bocksed (InventiEase) Project Submission
 
 ---
 

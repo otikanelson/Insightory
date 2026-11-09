@@ -689,7 +689,7 @@ export default function DashboardScreen() {
           </View>
           
           <ThemedText style={[styles.aiInfoText, { color: theme.subtext }]}>
-            Insightory uses AI to analyze your sales patterns and predict demand, risk scores, and optimal inventory levels. 
+            Bocksed uses AI to analyze your sales patterns and predict demand, risk scores, and optimal inventory levels. 
             The system learns from your transaction history to provide accurate forecasts and actionable recommendations.
           </ThemedText>
 

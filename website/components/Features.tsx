@@ -131,7 +131,7 @@ export default function Features() {
             Built for modern <span className="gradient-text">retail</span>
           </h2>
           <p className="text-lg max-w-2xl mx-auto" style={{ color: 'var(--subtext)' }}>
-            From corner stores to multi-location chains — Insightory scales with your business and keeps your inventory under control.
+            From corner stores to multi-location chains — Bocksed scales with your business and keeps your inventory under control.
           </p>
         </div>
 

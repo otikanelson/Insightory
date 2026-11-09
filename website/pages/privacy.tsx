@@ -9,8 +9,8 @@ export default function Privacy() {
   return (
     <>
       <Head>
-        <title>Privacy Policy — Insightory</title>
-        <meta name="description" content="Insightory Privacy Policy" />
+        <title>Privacy Policy — Bocksed</title>
+        <meta name="description" content="Bocksed Privacy Policy" />
       </Head>
       <ThemeApplier />
 
@@ -59,7 +59,7 @@ export default function Privacy() {
               {
                 title: '4. Data Retention',
                 content: null,
-                custom: <>We retain your personal information for as long as your account is active or as needed to provide you services. You may request deletion of your account and associated data at any time by contacting us at <a href="mailto:privacy@insightory.app" style={{ color: 'var(--primary)' }}>privacy@insightory.app</a>.</>,
+                custom: <>We retain your personal information for as long as your account is active or as needed to provide you services. You may request deletion of your account and associated data at any time by contacting us at <a href="mailto:privacy@Bocksed.app" style={{ color: 'var(--primary)' }}>privacy@Bocksed.app</a>.</>,
               },
               {
                 title: '5. Third-Party Services',
@@ -68,7 +68,7 @@ export default function Privacy() {
               {
                 title: '6. Your Rights',
                 content: null,
-                custom: <>Depending on your location, you may have certain rights regarding your personal data, including the right to access, correct, or delete your data. To exercise these rights, please contact us at <a href="mailto:privacy@insightory.app" style={{ color: 'var(--primary)' }}>privacy@insightory.app</a>.</>,
+                custom: <>Depending on your location, you may have certain rights regarding your personal data, including the right to access, correct, or delete your data. To exercise these rights, please contact us at <a href="mailto:privacy@Bocksed.app" style={{ color: 'var(--primary)' }}>privacy@Bocksed.app</a>.</>,
               },
               {
                 title: '7. Changes to This Policy',
@@ -77,7 +77,7 @@ export default function Privacy() {
               {
                 title: '8. Contact Us',
                 content: null,
-                custom: <>If you have any questions about this Privacy Policy, please contact us at <a href="mailto:privacy@insightory.app" style={{ color: 'var(--primary)' }}>privacy@insightory.app</a> or visit our <Link href="/contact" style={{ color: 'var(--primary)' }}>Contact page</Link>.</>,
+                custom: <>If you have any questions about this Privacy Policy, please contact us at <a href="mailto:privacy@Bocksed.app" style={{ color: 'var(--primary)' }}>privacy@Bocksed.app</a> or visit our <Link href="/contact" style={{ color: 'var(--primary)' }}>Contact page</Link>.</>,
               },
             ].map((s) => (
               <section key={s.title}>

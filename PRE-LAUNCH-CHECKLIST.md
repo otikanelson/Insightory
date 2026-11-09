@@ -1,4 +1,4 @@
-# Pre-Launch Checklist for Insightory Inventory App
+# Pre-Launch Checklist for Bocksed Inventory App
 
 This document outlines the features and improvements needed before the app is ready for public release.
 
